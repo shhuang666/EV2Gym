@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ev2gym"
+version = "2.0.0"
+description = "A realistic V2G simulator environment"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Stavros Orfanoudakis"}
+]
+keywords = [
+    "gym",
+    "Reinforcement Learning",
+    "V2X",
+    "V2G",
+    "G2V",
+    "EVs",
+    "ev2gym",
+    "Electric Vehicles",
+    "Electric Vehicle Simulator"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "gymnasium>=1.0",
+    "pyyaml",
+    "matplotlib",
+    "pandas>=2.0",
+    "networkx>=3.0",
+    "gurobipy",
+    "numpy>=1.24",
+    "stable-baselines3[extra]>=2.7.1",
+    "wandb>=0.24.0",
+    "setuptools>=80.9.0",
+    "pandapower>=3.3.2",
+    "psutil>=7.2.1",
+    "tensorboard>=2.20.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ev2gym*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.csv", "*.json", "*.yaml", "*.npy", "*.png"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[tool.uv]
+dev-dependencies = [
+    "numba>=0.61",
+    "multicopula",
+    "torch",
+]
