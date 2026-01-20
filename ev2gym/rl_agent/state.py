@@ -154,8 +154,6 @@ def V2G_profit_max_loads(env, *args):
 
     return state
     
-
-
 def BusinessPSTwithMoreKnowledge(env, *args):
     '''
     This state function is used for the business case scenario that requires more knowledge such as SoC and time of departure for each EV present.
@@ -211,7 +209,6 @@ def BusinessPSTwithMoreKnowledge(env, *args):
     np.set_printoptions(suppress=True)
 
     return state
-
 
 def V2G_grid_state(env, *args):
     '''
@@ -276,3 +273,43 @@ def V2G_grid_state(env, *args):
     state = np.array(np.hstack(state))
 
     return state
+
+def V2G_profit_max_no_forecast(env, *args):
+    '''
+    This is a simplification of the V2GProfitMax state function, which removes the forecasted charge prices.
+    '''
+    
+    state = [
+        (env.current_step),        
+    ]
+
+    state.append(env.current_power_usage[env.current_step-1])
+
+    charge_prices = abs(env.charge_prices[0])
+    
+    state.append(charge_prices)
+    
+    # For every transformer
+    for tr in env.transformers:
+
+        # For every charging station connected to the transformer
+        for cs in env.charging_stations:
+            if cs.connected_transformer == tr.id:
+
+                # For every EV connected to the charging station
+                for EV in cs.evs_connected:
+                    # If there is an EV connected
+                    if EV is not None:
+                        state.append([
+                            EV.get_soc(),
+                            EV.time_of_departure - env.current_step,
+                            ])
+
+                    # else if there is no EV connected put zeros
+                    else:
+                        state.append(np.zeros(2))
+
+    state = np.array(np.hstack(state))
+
+    return state
+    
