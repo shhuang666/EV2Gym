@@ -11,6 +11,7 @@ import datetime
 import time
 
 from ev2gym.utilities.arg_parser import arg_parser
+from ev2gym.utilities.loaders import load_function_from_module
 from ev2gym.models import ev2gym_env
 
 from ev2gym.baselines.heuristics import RoundRobin, ChargeAsLateAsPossible, ChargeAsFastAsPossible
@@ -21,7 +22,7 @@ from ev2gym.baselines.mpc.eMPC import eMPC_V2G, eMPC_G2V
 from ev2gym.baselines.mpc.V2GProfitMax import V2GProfitMaxOracle, V2GProfitMaxLoadsOracle
 
 from stable_baselines3 import PPO, A2C, DDPG, SAC, TD3
-from sb3_contrib import TQC, TRPO, ARS, RecurrentPPO
+# from sb3_contrib import TQC, TRPO, ARS, RecurrentPPO
 
 from ev2gym.baselines.gurobi_models.tracking_error import PowerTrackingErrorrMin
 from ev2gym.baselines.gurobi_models.profit_max import V2GProfitMaxOracleGB
@@ -71,23 +72,55 @@ def evaluator():
 
     print(f'Number of test cycles: {n_test_cycles}')
 
-    if args.config_file == "ev2gym/example_config_files/V2GProfitMax.yaml":
-        reward_function = profit_maximization
-        state_function = V2G_profit_max
+    # Set default reward and state functions
+    # Users can override these with --reward_function and --state_function arguments
+    reward_function = profit_maximization
+    state_function = V2G_profit_max
+    
+    # Allow command-line override
+    if args.reward_function is not None:
+        # Try to load the function using the flexible loader
+        loaded_func = load_function_from_module(args.reward_function)
+        
+        # If it returns a string, try the built-in map
+        if isinstance(loaded_func, str):
+            reward_map = {
+                'profit_maximization': profit_maximization,
+                'SquaredTrackingErrorReward': SquaredTrackingErrorReward,
+                'ProfitMax_TrPenalty_UserIncentives': ProfitMax_TrPenalty_UserIncentives,
+            }
+            if loaded_func in reward_map:
+                reward_function = reward_map[loaded_func]
+            else:
+                print(f"Warning: Unknown reward function '{args.reward_function}', using default")
+        else:
+            # Custom function loaded successfully
+            reward_function = loaded_func
+            print(f"Loaded custom reward function: {args.reward_function}")
+    
+    if args.state_function is not None:
+        # Try to load the function using the flexible loader
+        loaded_func = load_function_from_module(args.state_function)
+        
+        # If it returns a string, try the built-in map
+        if isinstance(loaded_func, str):
+            state_map = {
+                'V2G_profit_max': V2G_profit_max,
+                'PublicPST': PublicPST,
+                'V2G_profit_max_loads': V2G_profit_max_loads,
+            }
+            if loaded_func in state_map:
+                state_function = state_map[loaded_func]
+            else:
+                print(f"Warning: Unknown state function '{args.state_function}', using default")
+        else:
+            # Custom function loaded successfully
+            state_function = loaded_func
+            print(f"Loaded custom state function: {args.state_function}")
+    
+    print(f"Reward function: {reward_function.__name__}")
+    print(f"State function: {state_function.__name__}")
 
-    elif args.config_file == "ev2gym/example_config_files/PublicPST.yaml":
-        reward_function = SquaredTrackingErrorReward
-        state_function = PublicPST
-
-    elif args.config_file == "ev2gym/example_config_files/V2G_MPC.yaml":
-        reward_function = profit_maximization
-        state_function = V2G_profit_max
-
-    elif args.config_file == "ev2gym/example_config_files/V2GProfitPlusLoads.yaml":
-        reward_function = ProfitMax_TrPenalty_UserIncentives
-        state_function = V2G_profit_max_loads
-    else:
-        raise ValueError('Unknown config file')
 
 
     def generate_replay(evaluation_name):
@@ -113,14 +146,10 @@ def evaluator():
 
     # Algorithms to compare:
     algorithms = [
+        PPO,
         ChargeAsFastAsPossible,
         ChargeAsLateAsPossible,
         # PPO, A2C, DDPG, SAC, TD3, TQC, TRPO, ARS, RecurrentPPO,
-        # SAC,
-        # TQC,
-        # # TD3,
-        # # ARS,
-        # # RecurrentPPO,
         RoundRobin,
         # eMPC_V2G,
         # # V2GProfitMaxLoadsOracle,
@@ -128,25 +157,6 @@ def evaluator():
         # V2GProfitMaxOracle,
         # PowerTrackingErrorrMin
     ]
-
-    # algorithms = [
-    #     # ChargeAsFastAsPossibleToDesiredCapacity,
-    #             'OCMF_V2G_10',
-    #             # 'OCMF_V2G_20',
-    #             'OCMF_V2G_30',
-    #             'OCMF_G2V_10',
-    #             # # 'OCMF_G2V_20',
-    #             'OCMF_G2V_30',
-    #             'eMPC_V2G_10',
-    #             # # 'eMPC_V2G_20',
-    #             'eMPC_V2G_30',
-    #             'eMPC_G2V_10',
-    #             'eMPC_G2V_30',
-                
-                
-    #             #   eMPC_V2G,
-    #             #   eMPC_G2V,
-    #             ]
 
     evaluation_name = f'eval_{number_of_charging_stations}cs_{n_transformers}tr_{scenario}_{len(algorithms)}_algos' +\
         f'_{n_test_cycles}_exp_' +\
@@ -176,8 +186,8 @@ def evaluator():
             else:
                 replay_path = eval_replay_files[k]
 
-            if algorithm in [PPO, A2C, DDPG, SAC, TD3, TQC, TRPO, ARS, RecurrentPPO]:
-                gym.envs.register(id='evs-v0', entry_point='ev2gym.ev_city:ev2gym',
+            if algorithm in [PPO, A2C, DDPG, SAC, TD3]:
+                gym.envs.register(id='evs-v0', entry_point='ev2gym.models.ev2gym_env:EV2Gym',
                                 kwargs={'config_file': args.config_file,
                                         'generate_rnd_game': True,
                                         'state_function': state_function,
@@ -186,12 +196,15 @@ def evaluator():
                                         })
                 env = gym.make('evs-v0')
 
-                if algorithm == RecurrentPPO:
-                    load_path = f'./saved_models/{number_of_charging_stations}cs_{scenario}/' + \
-                        f"rppo_{reward_function.__name__}_{state_function.__name__}"
-                else:
-                    load_path = f'./saved_models/{number_of_charging_stations}cs_{scenario}/' + \
-                        f"{algorithm.__name__.lower()}_{reward_function.__name__}_{state_function.__name__}"
+                # if algorithm == RecurrentPPO:
+                #     load_path = f'./saved_models/{number_of_charging_stations}cs_{scenario}/' + \
+                #         f"rppo_{reward_function.__name__}_{state_function.__name__}"
+                # else:
+                #     load_path = f'./saved_models/{number_of_charging_stations}cs_{scenario}/' + \
+                #         f"{algorithm.__name__.lower()}_{reward_function.__name__}_{state_function.__name__}"
+
+                load_path = f'./saved_models/{number_of_charging_stations}cs_{scenario}/' + \
+                        f"{algorithm.__name__.lower()}_{reward_function.__name__}_{state_function.__name__}/best_model.zip"
 
                 # initialize the timer
                 timer = time.time()
@@ -248,7 +261,7 @@ def evaluator():
             for i in range(simulation_length):
                 print(f' Step {i+1}/{simulation_length} -- {algorithm}')
                 ################# Evaluation ##############################
-                if algorithm in [PPO, A2C, DDPG, SAC, TD3, TQC, TRPO, ARS, RecurrentPPO]:
+                if algorithm in [PPO, A2C, DDPG, SAC, TD3]:
                     action, _ = model.predict(state, deterministic=True)
                     state, reward, done, stats = env.step(action)
                     if i == simulation_length - 2:
@@ -291,7 +304,7 @@ def evaluator():
                     else:
                         results = pd.concat([results, results_i])
 
-                    if algorithm in [PPO, A2C, DDPG, SAC, TD3, TQC, TRPO, ARS, RecurrentPPO]:
+                    if algorithm in [PPO, A2C, DDPG, SAC, TD3]:
                         env = saved_env
 
                     plot_results_dict[algorithm.__name__] = deepcopy(env)
@@ -317,8 +330,6 @@ def evaluator():
     print(results_grouped[['total_transformer_overload', 'time']])
     # input('Press Enter to continue')
     
-    return
-
     algorithm_names = []
     for algorithm in algorithms:
         # if class has attribute .name, use it
@@ -327,6 +338,7 @@ def evaluator():
         else:
             algorithm_names.append(algorithm.__name__)
 
+    return
 
     plot_total_power(results_path=save_path + 'plot_results_dict.pkl',
                     save_path=save_path,

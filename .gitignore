@@ -167,7 +167,7 @@ replay/
 results/
 model.lp
 vscode/
-.vscode/settings.json
+.vscode/
 runs/
 saved_models/
 trajectories/

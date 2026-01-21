@@ -49,5 +49,11 @@ def arg_parser():
                         
     parser.add_argument("--dataset", default="random", type=str)
     
+    # Optional: Override auto-detected reward and state functions
+    parser.add_argument("--reward_function", default=None, type=str,
+                        help="Override reward function (options: profit_maximization, SquaredTrackingErrorReward, ProfitMax_TrPenalty_UserIncentives)")
+    parser.add_argument("--state_function", default=None, type=str,
+                        help="Override state function (options: V2G_profit_max, PublicPST, V2G_profit_max_loads)")
+    
 
     return parser.parse_args()

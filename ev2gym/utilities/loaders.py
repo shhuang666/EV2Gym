@@ -8,6 +8,9 @@ import math
 import datetime
 import pkg_resources
 import json
+import os
+import sys
+import importlib
 from typing import List, Tuple
 
 from ev2gym.models.ev_charger import EV_Charger
@@ -16,6 +19,46 @@ from ev2gym.models.transformer import Transformer
 from ev2gym.models.grid import PowerGrid
 
 from ev2gym.utilities.utils import EV_spawner, generate_power_setpoints, EV_spawner_GF
+
+
+def load_function_from_module(function_spec):
+    """
+    Load a function from a module specification.
+    
+    Args:
+        function_spec: Either a simple function name (for built-in functions)
+                      or 'module_path:function_name' for custom functions.
+                      Examples:
+                        - 'profit_maximization' (built-in)
+                        - 'my_state:custom_state_function' (custom)
+                        - 'path.to.module:my_function' (custom with nested path)
+    
+    Returns:
+        The function object
+    """
+    if ':' in function_spec:
+        # Custom function: module_path:function_name
+        module_path, function_name = function_spec.split(':', 1)
+        
+        # Add current directory to sys.path if not already there
+        current_dir = os.getcwd()
+        if current_dir not in sys.path:
+            sys.path.insert(0, current_dir)
+        
+        try:
+            # Import the module
+            module = importlib.import_module(module_path)
+            
+            # Get the function from the module
+            if hasattr(module, function_name):
+                return getattr(module, function_name)
+            else:
+                raise AttributeError(f"Module '{module_path}' has no function '{function_name}'")
+        except ImportError as e:
+            raise ImportError(f"Could not import module '{module_path}': {e}")
+    else:
+        # Return the spec as-is, will be looked up in the built-in dictionaries
+        return function_spec
 
 
 def load_ev_spawn_scenarios(env) -> None:
