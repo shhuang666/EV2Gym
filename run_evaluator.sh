@@ -13,7 +13,7 @@
 CONFIG_FILE="ev2gym/example_config_files/simplePST.yaml"
 
 # Number of test cycles (evaluation episodes)
-N_TEST_CYCLES=5
+N_TEST_CYCLES=2
 
 # Reward function (leave empty to use default: profit_maximization)
 # Examples: "profit_maximization", "SquaredTrackingErrorReward", "ProfitMax_TrPenalty_UserIncentives"
@@ -24,6 +24,10 @@ REWARD_FUNCTION=""
 # Examples: "V2G_profit_max", "PublicPST", "V2G_profit_max_loads"
 # Or custom: "my_module:custom_state"
 STATE_FUNCTION="ev2gym.rl_agent.state:V2G_profit_max_no_forecast"
+
+# Replay path (leave empty to generate new replays)
+# Example: "./replay/10cs_1tr_V2GProfitMax/"
+# REPLAY_PATH="replay/eval_2cs_1tr_simplePST_4_algos_5_exp_2026_01_22_943618"
 
 # ============================================
 
@@ -46,6 +50,10 @@ while [[ $# -gt 0 ]]; do
             STATE_FUNCTION="$2"
             shift 2
             ;;
+        --replay_path)
+            REPLAY_PATH="$2"
+            shift 2
+            ;;
         --help|-h)
             echo "Usage: ./run_evaluator.sh [options]"
             echo ""
@@ -64,6 +72,8 @@ while [[ $# -gt 0 ]]; do
             echo "                             - PublicPST"
             echo "                             - V2G_profit_max_loads"
             echo "                           Custom: my_module:custom_state"
+            echo "  --replay_path PATH       Path to directory with replay files (optional)"
+            echo "                           If not specified, new replays will be generated"
             echo "  --help, -h              Show this help message"
             echo ""
             echo "Examples:"
@@ -72,9 +82,10 @@ while [[ $# -gt 0 ]]; do
             echo "  ./run_evaluator.sh --n_test_cycles 10"
             echo "  ./run_evaluator.sh --reward_function profit_maximization --state_function V2G_profit_max"
             echo "  ./run_evaluator.sh --reward_function my_rewards:custom_reward --state_function my_states:custom_state"
+            echo "  ./run_evaluator.sh --replay_path ./replay/10cs_1tr_V2GProfitMax/"
             echo ""
-            echo "Note: The evaluator will look for replay files in ./replay/{cs}cs_{tr}tr_{scenario}/"
-            echo "      If no replay files are found, new ones will be generated."
+            echo "Note: If --replay_path is not specified, new replay files will be generated."
+            echo "      To use existing replays, specify the directory path with --replay_path."
             exit 0
             ;;
         *)
@@ -96,6 +107,10 @@ if [ -n "$STATE_FUNCTION" ]; then
     CMD="$CMD --state_function $STATE_FUNCTION"
 fi
 
+if [ -n "$REPLAY_PATH" ]; then
+    CMD="$CMD --replay_path $REPLAY_PATH"
+fi
+
 # Print the command being executed
 echo "=========================================="
 echo "Running evaluator with the following configuration:"
@@ -110,6 +125,11 @@ if [ -n "$STATE_FUNCTION" ]; then
     echo "State Function: $STATE_FUNCTION"
 else
     echo "State Function: V2G_profit_max (default)"
+fi
+if [ -n "$REPLAY_PATH" ]; then
+    echo "Replay Path: $REPLAY_PATH"
+else
+    echo "Replay Path: Will generate new replays"
 fi
 echo "=========================================="
 echo ""

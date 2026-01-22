@@ -54,6 +54,21 @@ def arg_parser():
                         help="Override reward function (options: profit_maximization, SquaredTrackingErrorReward, ProfitMax_TrPenalty_UserIncentives)")
     parser.add_argument("--state_function", default=None, type=str,
                         help="Override state function (options: V2G_profit_max, PublicPST, V2G_profit_max_loads)")
-    
+
+    # Optional: Specify custom replay path for evaluation
+    parser.add_argument(
+        "--replay_path",
+        default=None,
+        type=str,
+        help="Path to directory containing replay files for evaluation (default: None, generates new replays)",
+    )
+
+    # Optional: Control verbosity of output
+    parser.add_argument(
+        "--verbose",
+        default=False,
+        action="store_true",
+        help="Enable verbose output showing step-by-step progress (default: False)",
+    )
 
     return parser.parse_args()
