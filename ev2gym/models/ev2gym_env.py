@@ -172,6 +172,11 @@ class EV2Gym(gym.Env):
             self.lightweight_plots = True
 
         self.sim_starting_date = self.sim_date
+        # Calculate the simulation end date for plotting purposes
+        # (sim_date gets updated during simulation but sim_end_date stays constant)
+        self.sim_end_date = self.sim_starting_date + datetime.timedelta(
+            minutes=self.timescale * (self.simulation_length - 1)
+        )
 
         # Read the config.charging_network_topology json file and read the topology
         try:
@@ -290,6 +295,10 @@ class EV2Gym(gym.Env):
                     self.sim_date += datetime.timedelta(days=1)
 
         self.sim_starting_date = self.sim_date
+        # Recalculate the simulation end date
+        self.sim_end_date = self.sim_starting_date + datetime.timedelta(
+            minutes=self.timescale * (self.simulation_length - 1)
+        )
         self.transformers = load_transformers(self)
         self.EVs_profiles = load_ev_profiles(self)        
         self.charge_prices, self.discharge_prices = load_electricity_prices(self)

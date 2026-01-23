@@ -209,7 +209,7 @@ def plot_total_power(results_path, save_path=None, algorithm_names=None):
     with open(results_path, 'rb') as f:
         replay = pickle.load(f)
 
-    plt.figure(figsize=(10, 7))
+    plt.figure(figsize=(14, 7))
     plt.rc('font', family='serif')
     light_blue = np.array([0.529, 0.808, 0.922, 1])
     gold = np.array([1, 0.843, 0, 1])
@@ -223,9 +223,9 @@ def plot_total_power(results_path, save_path=None, algorithm_names=None):
                                    datetime.timedelta(
                                        minutes=env.timescale),
                                    freq=f'{env.timescale}min')
-        date_range_print = pd.date_range(start=env.sim_starting_date,
-                                         end=env.sim_date,
-                                         periods=10)
+        date_range_print = pd.date_range(
+            start=env.sim_starting_date, end=env.sim_end_date, periods=10
+        )
 
         counter = 1
         dim_x = int(np.ceil(np.sqrt(env.number_of_transformers)))
@@ -289,8 +289,9 @@ def plot_total_power(results_path, save_path=None, algorithm_names=None):
                          linestyle='--',
                          linewidth=2,
                          label='Transformer Max Power')
-                plt.plot([env.sim_starting_date, env.sim_date],
-                         [0, 0], 'black')
+                plt.plot(
+                    [env.sim_starting_date, env.sim_end_date], [0, 0], "black"
+                )
 
             df['total'] = df.sum(axis=1)
 
@@ -308,13 +309,15 @@ def plot_total_power(results_path, save_path=None, algorithm_names=None):
     plt.title(f'Transformer {tr.id+1}', fontsize=28)
     plt.xlabel(f'Time', fontsize=28)
     plt.ylabel(f'Power (kW)', fontsize=28)
-    plt.xlim([env.sim_starting_date, env.sim_date])
-    plt.xticks(ticks=date_range_print,
-               labels=[
-                   f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-               rotation=45,
-               fontsize=28)
+    plt.xlim([env.sim_starting_date, env.sim_end_date])
     plt.yticks(fontsize=28)
+    plt.xticks(
+        ticks=date_range_print,
+        labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+        rotation=45,
+        fontsize=20,
+        ha="right",
+    )
     # put legend under the plot
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                fancybox=True, shadow=True, ncol=3, fontsize=24)
@@ -334,7 +337,7 @@ def plot_total_power_V2G(results_path, save_path=None, algorithm_names=None):
         replay = pickle.load(f)
 
     plt.close('all')
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(14, 7))
     plt.grid(True, which='major', axis='both')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -360,9 +363,9 @@ def plot_total_power_V2G(results_path, save_path=None, algorithm_names=None):
                                    datetime.timedelta(
                                        minutes=env.timescale),
                                    freq=f'{env.timescale}min')
-        date_range_print = pd.date_range(start=env.sim_starting_date,
-                                         end=env.sim_date,
-                                         periods=7)
+        date_range_print = pd.date_range(
+            start=env.sim_starting_date, end=env.sim_end_date, periods=7
+        )
 
         counter = 1
         dim_x = int(np.ceil(np.sqrt(env.number_of_transformers)))
@@ -438,8 +441,9 @@ def plot_total_power_V2G(results_path, save_path=None, algorithm_names=None):
                          linewidth=2,
                          alpha=0.7,
                          label='Transf. Limit')
-                plt.plot([env.sim_starting_date, env.sim_date],
-                         [0, 0], 'black')
+                plt.plot(
+                    [env.sim_starting_date, env.sim_end_date], [0, 0], "black"
+                )
 
             df['total'] = df.sum(axis=1)
 
@@ -455,13 +459,15 @@ def plot_total_power_V2G(results_path, save_path=None, algorithm_names=None):
             counter += 1
 
     plt.ylabel(f'Power (kW)', fontsize=28)
-    plt.xlim([env.sim_starting_date, env.sim_date])
-    plt.xticks(ticks=date_range_print,
-               labels=[
-                   f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-               #    rotation=45,
-               fontsize=28)
+    plt.xlim([env.sim_starting_date, env.sim_end_date])
     plt.yticks(fontsize=28)
+    plt.xticks(
+        ticks=date_range_print,
+        labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+        rotation=45,
+        fontsize=20,
+        ha="right",
+    )
     # put legend under the plot
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
                fancybox=True, shadow=True, ncol=3, fontsize=24)
@@ -495,9 +501,9 @@ def plot_comparable_EV_SoC(results_path, save_path=None, algorithm_names=None):
                                    datetime.timedelta(
                                        minutes=env.timescale),
                                    freq=f'{env.timescale}min')
-        date_range_print = pd.date_range(start=env.sim_starting_date,
-                                         end=env.sim_date,
-                                         periods=10)
+        date_range_print = pd.date_range(
+            start=env.sim_starting_date, end=env.sim_end_date, periods=10
+        )
 
         counter = 1
         dim_x = int(np.ceil(np.sqrt(env.cs)))
@@ -535,7 +541,7 @@ def plot_comparable_EV_SoC(results_path, save_path=None, algorithm_names=None):
             plt.title(f'Charging Station {cs.id + 1}', fontsize=24)
             plt.ylabel('SoC', fontsize=24)
             plt.ylim([0.1, 1])
-            plt.xlim([env.sim_starting_date, env.sim_date])
+            plt.xlim([env.sim_starting_date, env.sim_end_date])
             plt.xticks(ticks=date_range_print,
                        labels=[f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print], rotation=45,
                        fontsize=22)
@@ -561,7 +567,7 @@ def plot_comparable_EV_SoC_single(results_path, save_path=None, algorithm_names=
         replay = pickle.load(f)
 
     plt.close('all')
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))
     plt.rc('font', family='serif')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -579,9 +585,9 @@ def plot_comparable_EV_SoC_single(results_path, save_path=None, algorithm_names=
                                    datetime.timedelta(
                                        minutes=env.timescale),
                                    freq=f'{env.timescale}min')
-        date_range_print = pd.date_range(start=env.sim_starting_date,
-                                         end=env.sim_date,
-                                         periods=7)
+        date_range_print = pd.date_range(
+            start=env.sim_starting_date, end=env.sim_end_date, periods=7
+        )
 
         color_list_map = plt.cm.get_cmap('Set1', len(replay.keys()))
         color_list = color_list_map(np.linspace(0, 1, len(replay.keys())))
@@ -634,12 +640,14 @@ def plot_comparable_EV_SoC_single(results_path, save_path=None, algorithm_names=
                            labels=[' ' for d in np.arange(0, 1.1, 0.1)])
 
             plt.ylim([0.1, 1.09])
-            plt.xlim([env.sim_starting_date, env.sim_date])
-            plt.xticks(ticks=date_range_print,
-                       labels=[
-                           f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-                       #    rotation=45,
-                       fontsize=28)
+            plt.xlim([env.sim_starting_date, env.sim_end_date])
+            plt.xticks(
+                ticks=date_range_print,
+                labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+                rotation=45,
+                fontsize=20,
+                ha="right",
+            )
             counter += 1
 
     # plt.legend(loc='upper center', bbox_to_anchor=(0, -0.15),
@@ -663,7 +671,7 @@ def plot_comparable_CS_Power(results_path, save_path=None, algorithm_names=None)
         replay = pickle.load(f)
 
     plt.close('all')
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))
     plt.rc('font', family='serif')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -681,9 +689,9 @@ def plot_comparable_CS_Power(results_path, save_path=None, algorithm_names=None)
                                    datetime.timedelta(
                                        minutes=env.timescale),
                                    freq=f'{env.timescale}min')
-        date_range_print = pd.date_range(start=env.sim_starting_date,
-                                         end=env.sim_date,
-                                         periods=7)
+        date_range_print = pd.date_range(
+            start=env.sim_starting_date, end=env.sim_end_date, periods=7
+        )
 
         color_list_map = plt.cm.get_cmap('Set1', len(replay.keys()))
         color_list = color_list_map(np.linspace(0, 1, len(replay.keys())))
@@ -739,12 +747,14 @@ def plot_comparable_CS_Power(results_path, save_path=None, algorithm_names=None)
                 #             labels=[' ' for d in np.arange(0, 1.1, 0.1)])
 
             # plt.ylim([0.1, 1.09])
-            plt.xlim([env.sim_starting_date, env.sim_date])
-            plt.xticks(ticks=date_range_print,
-                       labels=[
-                           f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-                       #    rotation=45,
-                       fontsize=28)
+            plt.xlim([env.sim_starting_date, env.sim_end_date])
+            plt.xticks(
+                ticks=date_range_print,
+                labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+                rotation=45,
+                fontsize=20,
+                ha="right",
+            )
             counter += 1
 
     # plt.legend(loc='upper center', bbox_to_anchor=(0, -0.15),
@@ -781,9 +791,9 @@ def plot_actual_power_vs_setpoint(results_path, save_path=None, algorithm_names=
                                    datetime.timedelta(
                                        minutes=env.timescale),
                                    freq=f'{env.timescale}min')
-        date_range_print = pd.date_range(start=env.sim_starting_date,
-                                         end=env.sim_date,
-                                         periods=7)
+        date_range_print = pd.date_range(
+            start=env.sim_starting_date, end=env.sim_end_date, periods=7
+        )
 
         # plot the actual power vs the setpoint power for each algorithm in subplots
         plt.subplot(len(replay), 1, index+1)
@@ -801,11 +811,12 @@ def plot_actual_power_vs_setpoint(results_path, save_path=None, algorithm_names=
         plt.yticks(fontsize=22)
 
         if index == len(replay) - 1:
-            plt.xticks(ticks=date_range_print,
-                       labels=[
-                           f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-                       #    rotation=45,
-                       fontsize=22)
+            plt.xticks(
+                ticks=date_range_print,
+                labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+                rotation=45,
+                fontsize=22,
+            )
             # plt.xlabel('Time', fontsize=28)
         else:
             plt.xticks(ticks=date_range_print,
@@ -814,7 +825,7 @@ def plot_actual_power_vs_setpoint(results_path, save_path=None, algorithm_names=
         if index == len(replay) // 2:
             plt.ylabel('Power (kW)', fontsize=22)
 
-        plt.xlim([env.sim_starting_date, env.sim_date])
+        plt.xlim([env.sim_starting_date, env.sim_end_date])
         plt.ylim([0, 1.1*env.current_power_usage.max()])
 
     # Put the legend under the plot in a separate axis
@@ -833,32 +844,28 @@ def plot_prices(results_path, save_path=None, algorithm_names=None):
         replay = pickle.load(f)
 
     plt.close('all')
-    plt.figure(figsize=(7, 11))
+    fig, ax = plt.subplots(figsize=(12, 5))
     plt.rc('font', family='serif')
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["left"].set_linewidth(2)
+    ax.spines["bottom"].set_linewidth(2)
+
+    plt.grid(True, which="major", axis="both")
 
     keys = list(replay.keys())
     env = replay[keys[0]]
 
-    date_range = pd.date_range(start=env.sim_starting_date,
-                               end=env.sim_starting_date +
-                               (env.simulation_length - 1) *
-                               datetime.timedelta(
-                                   minutes=env.timescale),
-                               freq=f'{env.timescale}min')
-    date_range_print = pd.date_range(start=env.sim_starting_date,
-                                     end=env.sim_date,
-                                     periods=7)
+    date_range = pd.date_range(
+        start=env.sim_starting_date,
+        end=env.sim_starting_date
+        + (env.simulation_length - 1) * datetime.timedelta(minutes=env.timescale),
+        freq=f"{env.timescale}min",
+    )
 
-    plt.close('all')
-    fig, ax = plt.subplots()
-
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['left'].set_linewidth(2)
-    ax.spines['bottom'].set_linewidth(2)
-
-    plt.grid(True, which='major', axis='both')
-    plt.rc('font', family='serif')
+    date_range_print = pd.date_range(
+        start=env.sim_starting_date, end=env.sim_end_date, periods=7
+    )
 
     charge_prices = env.charge_prices[0, :]
     discharge_prices = env.discharge_prices[0, :]
@@ -868,17 +875,20 @@ def plot_prices(results_path, save_path=None, algorithm_names=None):
     plt.step(date_range, discharge_prices, alpha=1,
              color='#93003a', label='Discharge Prices')
 
-    plt.xlim([env.sim_starting_date, env.sim_date])
+    plt.xlim([env.sim_starting_date, env.sim_end_date])
     # plt.ylim()
     # plt.axhline(0, color='black', lw=2)
     y_ticks = np.arange(0.150, 0.351, 0.05)
     plt.yticks(y_ticks, fontsize=28)
 
     plt.ylim([0.12, 0.35])
-    plt.xticks(ticks=date_range_print,
-               labels=[f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-               #    rotation=45,
-               fontsize=28)
+    plt.xticks(
+        ticks=date_range_print,
+        labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+        rotation=45,
+        fontsize=20,
+        ha="right",
+    )
     plt.ylabel('Price (€/kWh)', fontsize=28)
 
     plt.legend(fontsize=28)

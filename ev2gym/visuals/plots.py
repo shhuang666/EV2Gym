@@ -383,10 +383,12 @@ def ev_city_plot(env):
 
             plt.xlim([env.sim_starting_date, env.sim_date])
 
-            plt.xticks(ticks=date_range_print,
-                       labels=[
-                           f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-                       fontsize=4)
+            plt.xticks(
+                ticks=date_range_print,
+                labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+                rotation=45,
+                fontsize=4,
+            )
 
             if node == 0:
                 plt.legend(fontsize=8)
@@ -435,10 +437,12 @@ def ev_city_plot(env):
 
             plt.xlim([env.sim_starting_date, env.sim_date])
 
-            plt.xticks(ticks=date_range_print,
-                       labels=[
-                           f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-                       fontsize=4)
+            plt.xticks(
+                ticks=date_range_print,
+                labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+                rotation=45,
+                fontsize=4,
+            )
 
             if node == 0:
                 plt.legend(fontsize=8)
@@ -487,10 +491,12 @@ def ev_city_plot(env):
 
             plt.xlim([env.sim_starting_date, env.sim_date])
 
-            plt.xticks(ticks=date_range_print,
-                       labels=[
-                           f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-                       fontsize=4)
+            plt.xticks(
+                ticks=date_range_print,
+                labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+                rotation=45,
+                fontsize=4,
+            )
             plt.yticks(fontsize=4)
             
             if node == 0:
@@ -509,7 +515,7 @@ def ev_city_plot(env):
     plt.close('all')
     # Plot the total power for each CS group
     df_total_power = pd.DataFrame([], index=date_range)
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(14, 8))
 
     counter = 1
     dim_x = int(np.ceil(np.sqrt(env.number_of_transformers)))
@@ -611,12 +617,14 @@ def ev_city_plot(env):
         plt.xlabel(f'Time', fontsize=28)
         plt.ylabel(f'Power (kW)', fontsize=28)
         plt.xlim([env.sim_starting_date, env.sim_date])
-        plt.xticks(ticks=date_range_print,
-                   labels=[
-                       f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print],
-                   rotation=45,
-                   fontsize=28)
         plt.yticks(fontsize=28)
+        plt.xticks(
+            ticks=date_range_print,
+            labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+            rotation=45,
+            fontsize=20,
+            ha="right",
+        )
 
         legend_list = [f'CS {i}' for i in tr.cs_ids] + \
             ['Total Power (kW)'] + \

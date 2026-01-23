@@ -13,7 +13,7 @@
 CONFIG_FILE="ev2gym/example_config_files/simplePST.yaml"
 
 # Number of test cycles (evaluation episodes)
-N_TEST_CYCLES=2
+N_TEST_CYCLES=5
 
 # Reward function (leave empty to use default: profit_maximization)
 # Examples: "profit_maximization", "SquaredTrackingErrorReward", "ProfitMax_TrPenalty_UserIncentives"
@@ -27,7 +27,7 @@ STATE_FUNCTION="ev2gym.rl_agent.state:V2G_profit_max_no_forecast"
 
 # Replay path (leave empty to generate new replays)
 # Example: "./replay/10cs_1tr_V2GProfitMax/"
-# REPLAY_PATH="replay/eval_2cs_1tr_simplePST_4_algos_5_exp_2026_01_22_943618"
+REPLAY_PATH="replay/eval_2cs_1tr_simplePST_4_algos_5_exp_2026_01_23_288154"
 
 # ============================================
 
