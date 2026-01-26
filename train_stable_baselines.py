@@ -19,6 +19,108 @@ import os
 import yaml
 import importlib
 import sys
+import numpy as np
+
+
+class ActionLoggingCallback(BaseCallback):
+    """
+    Callback for logging action statistics during training.
+
+    For on-policy algorithms (PPO, A2C) that use explicit action clipping:
+    - Logs both raw policy outputs and clipped actions sent to environment
+    - Tracks clipping statistics
+
+    For off-policy algorithms (SAC, DDPG, TD3) that use tanh-based bounding:
+    - Only logs the real actions (no separate raw actions since there's no clipping)
+    """
+
+    def __init__(self, use_wandb: bool = True, verbose: int = 0):
+        """
+        Args:
+            use_wandb: Whether to log to wandb
+            verbose: Verbosity level
+        """
+        super().__init__(verbose)
+        self.use_wandb = use_wandb
+        self.rollout_raw_actions = []
+        self.rollout_clipped_actions = []
+
+    def _on_rollout_start(self) -> None:
+        """Called before collecting a new rollout."""
+        self.rollout_raw_actions = []
+        self.rollout_clipped_actions = []
+
+    def _on_step(self) -> bool:
+        """Collect action statistics during the rollout."""
+        if "actions" not in self.locals:
+            return True
+
+        actions = self.locals["actions"]
+
+        # Check if this algorithm uses explicit action clipping
+        # On-policy algorithms (PPO, A2C) expose 'clipped_actions'
+        # Off-policy algorithms (SAC, DDPG, TD3) use tanh-based bounding
+        if "clipped_actions" in self.locals:
+            # Algorithm clips actions - log both raw and clipped
+            self.rollout_raw_actions.extend(actions.flatten())
+            clipped_actions = self.locals["clipped_actions"]
+            self.rollout_clipped_actions.extend(clipped_actions.flatten())
+        else:
+            # No clipping - only log the real actions
+            self.rollout_clipped_actions.extend(actions.flatten())
+
+        return True
+
+    def _on_rollout_end(self) -> None:
+        """Log action statistics at the end of each rollout."""
+        stats = {}
+
+        # Log raw policy action statistics
+        if len(self.rollout_raw_actions) > 0:
+            raw_array = np.array(self.rollout_raw_actions)
+            stats.update(
+                {
+                    "rollout/raw_actions_mean": float(np.mean(raw_array)),
+                    "rollout/raw_actions_std": float(np.std(raw_array)),
+                    "rollout/raw_actions_min": float(np.min(raw_array)),
+                    "rollout/raw_actions_max": float(np.max(raw_array)),
+                }
+            )
+
+        # Log clipped action statistics (actual environment actions)
+        if len(self.rollout_clipped_actions) > 0:
+            clipped_array = np.array(self.rollout_clipped_actions)
+            stats.update(
+                {
+                    "rollout/actions_mean": float(np.mean(clipped_array)),
+                    "rollout/actions_std": float(np.std(clipped_array)),
+                    "rollout/actions_min": float(np.min(clipped_array)),
+                    "rollout/actions_max": float(np.max(clipped_array)),
+                    "rollout/actions_sum": float(np.sum(clipped_array)),
+                }
+            )
+
+            # Calculate clipping statistics if we have both
+            if len(self.rollout_raw_actions) > 0:
+                clipping_occurred = np.sum(raw_array != clipped_array)
+                clipping_rate = clipping_occurred / len(raw_array)
+                stats["rollout/action_clipping_rate"] = float(clipping_rate)
+
+        # Log to tensorboard (always available in SB3)
+        for key, value in stats.items():
+            self.logger.record(key, value)
+
+        # Log to wandb if enabled
+        if self.use_wandb and wandb.run is not None:
+            wandb.log(stats, step=self.num_timesteps)
+
+        if self.verbose > 0 and len(self.rollout_clipped_actions) > 0:
+            print(
+                f"Rollout ended at step {self.num_timesteps}: "
+                f"Actions mean={stats.get('rollout/actions_mean', 0):.4f}, "
+                f"Clipping rate={stats.get('rollout/action_clipping_rate', 0):.2%}"
+            )
+
 
 def load_function_from_module(function_spec):
     """
@@ -183,7 +285,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("Unknown algorithm")
 
-    callbacks = [eval_callback]
+    callbacks = [eval_callback, ActionLoggingCallback(use_wandb=use_wandb, verbose=1)]
     if use_wandb:
         callbacks.insert(0, WandbCallback(verbose=2))
     
@@ -202,9 +304,11 @@ if __name__ == "__main__":
     obs = env.reset()
 
     stats = []
+    actions_log = []  # Track all actions
     for i in range(config['simulation_length']*args.eval_episodes):
 
         action, _states = model.predict(obs, deterministic=True)
+        actions_log.append(action)  # Record the action
         obs, reward, done, info = env.step(action)
 
         # env.render()
@@ -235,6 +339,17 @@ if __name__ == "__main__":
     print("total_transformer_overload: ", sum(
         [i[0]['total_transformer_overload'] for i in stats])/len(stats))
     print("reward: ", sum([i[0]['episode']['r'] for i in stats])/len(stats))
+    
+    # Calculate and print action statistics
+    actions_array = np.array(actions_log)
+    total_actions = np.sum(actions_array)
+    max_action = np.max(actions_array)
+    print("-----------------------------------------------------")
+    print("Action Statistics:")
+    print(f"Total sum of all actions: {total_actions}")
+    print(f"Maximum action value: {max_action}")
+    print("=====================================================")
+
 
     if use_wandb:
         run.log({
@@ -251,6 +366,8 @@ if __name__ == "__main__":
             "test/total_transformer_overload": sum([i[0]['total_transformer_overload'] for i in stats])/len
             (stats),
             "test/reward": sum([i[0]['episode']['r'] for i in stats])/len(stats),
+            "test/total_actions_sum": float(total_actions),
+            "test/max_action": float(max_action),
         })
 
         run.finish()
