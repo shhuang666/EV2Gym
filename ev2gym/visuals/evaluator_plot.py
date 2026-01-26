@@ -878,6 +878,11 @@ def plot_actual_power_vs_setpoint(results_path, save_path=None, algorithm_names=
     plt.figure(figsize=(7, 11))
     plt.rc("font", family="serif")
 
+    # Calculate global max power usage across all algorithms for consistent y-axis
+    global_max_power = max(
+        replay[key].current_power_usage.max() for key in replay.keys()
+    )
+
     for index, key in enumerate(replay.keys()):
         env = replay[key]
 
@@ -922,12 +927,7 @@ def plot_actual_power_vs_setpoint(results_path, save_path=None, algorithm_names=
 
         plt.xlim([env.sim_starting_date, env.sim_end_date])
 
-        # Avoid setting identical ylims when max power is zero
-        max_power = env.current_power_usage.max()
-        if max_power > 0:
-            plt.ylim([0, 1.1 * max_power])
-        else:
-            plt.ylim([0, 1])  # Default fallback for zero power
+        plt.ylim([0, 1.1 * global_max_power])
 
     # Put the legend under the plot in a separate axis
     plt.legend(

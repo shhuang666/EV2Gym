@@ -213,10 +213,10 @@ def evaluator():
     plot_results_dict = {}
     counter = 0
     for algorithm in algorithms:
-        print(" +------- Evaluating", algorithm, " -------+")
+        print(" +------- Evaluating", algorithm.__name__, " -------+")
         for k in range(n_test_cycles):
             if args.verbose:
-                print(f" Test cycle {k + 1}/{n_test_cycles} -- {algorithm}")
+                print(f" Test cycle {k + 1}/{n_test_cycles} -- {algorithm.__name__}")
             counter += 1
             h = -1
 
@@ -235,6 +235,7 @@ def evaluator():
                         "state_function": state_function,
                         "reward_function": reward_function,
                         "load_from_replay_path": replay_path,
+                        "lightweight_plots": False,  # Ensure port_arrival data is tracked for plotting
                     },
                 )
                 env = gym.make("evs-v0")
@@ -302,11 +303,20 @@ def evaluator():
 
             rewards = []
 
+            # For RL algorithms using VecEnv, we need to save the environment state
+            # before each step because VecEnv auto-resets the environment when done=True,
+            # which clears all statistics (including port_arrival) before we can access them.
+            last_unwrapped_env = None
+
             for i in range(simulation_length):
                 if args.verbose:
                     print(f" Step {i + 1}/{simulation_length} -- {algorithm}")
                 ################# Evaluation ##############################
                 if algorithm in [PPO, A2C, DDPG, SAC, TD3]:
+                    # Save the unwrapped env state BEFORE the step that may trigger done=True
+                    # This is necessary because VecEnv auto-resets on done, clearing all stats
+                    last_unwrapped_env = deepcopy(env.get_attr("unwrapped")[0])
+
                     action, _ = model.predict(state, deterministic=True)
                     state, reward, done, stats = env.step(action)
 
@@ -363,9 +373,10 @@ def evaluator():
                         results = pd.concat([results, results_i])
 
                     if algorithm in [PPO, A2C, DDPG, SAC, TD3]:
-                        # Extract the unwrapped EV2Gym environment from the Gymnasium wrapper
-                        unwrapped_env = env.get_attr("unwrapped")[0]
-                        plot_results_dict[algorithm.__name__] = deepcopy(unwrapped_env)
+                        # Use the saved unwrapped env from before the auto-reset
+                        # VecEnv auto-resets the env when done=True, so env.get_attr("unwrapped")[0]
+                        # would return a reset env with empty port_arrival data
+                        plot_results_dict[algorithm.__name__] = last_unwrapped_env
                     else:
                         plot_results_dict[algorithm.__name__] = deepcopy(env)
 
