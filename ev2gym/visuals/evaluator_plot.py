@@ -1,6 +1,6 @@
-'''
+"""
 This file is used to plot the comparatigve results of the different algorithms.
-'''
+"""
 
 import pickle
 import gzip
@@ -13,38 +13,65 @@ import os
 from ev2gym.models.ev2gym_env import EV2Gym
 
 
-marker_list = ['.', 'x', 'o', 'v', 's', 'p',
-               'P', '*', 'h', 'H', '+', 'X', 'D', 'd', '|', '_']
+marker_list = [
+    ".",
+    "x",
+    "o",
+    "v",
+    "s",
+    "p",
+    "P",
+    "*",
+    "h",
+    "H",
+    "+",
+    "X",
+    "D",
+    "d",
+    "|",
+    "_",
+]
 
 # color_list = ['#00429d', '#5681b9', '#93c4d2', '#ffa59e', '#dd4c65', '#93003a']
 
-color_list = ['#00429d', '#5681b9', '#93c4d2', '#ffa59e',
-              '#dd4c65', '#93003a', 'b', 'g', 'r', 'c', 'm', 'y', 'k']
+color_list = [
+    "#00429d",
+    "#5681b9",
+    "#93c4d2",
+    "#ffa59e",
+    "#dd4c65",
+    "#93003a",
+    "b",
+    "g",
+    "r",
+    "c",
+    "m",
+    "y",
+    "k",
+]
 
 algorithm_names = [
-    'Charge As Fast As Possible',
+    "Charge As Fast As Possible",
     # 'Charge As Late As Possible',
     # 'Round Robin',
-    'OCCF V2G',
-    'OCCF G2V',
-    'eMPC V2G',
-    'eMPC G2V',
+    "OCCF V2G",
+    "OCCF G2V",
+    "eMPC V2G",
+    "eMPC G2V",
 ]
 
 
 def plot_grid_metrics(results_path, save_path=None, algorithm_names=None):
-
-    plt.close('all')
+    plt.close("all")
     # Plot the total power of the CPO
     plt.figure(figsize=(16, 12))
 
     # Load the env pickle files
-    with gzip.open(results_path, 'rb') as f:
+    with gzip.open(results_path, "rb") as f:
         replay = pickle.load(f)
 
-
-     # Create a color cycle (one color per algorithm)
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    # Create a color cycle (one color per algorithm)
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     # If algorithm_names not provided, use the keys from replay.
     if algorithm_names is None:
@@ -64,8 +91,9 @@ def plot_grid_metrics(results_path, save_path=None, algorithm_names=None):
     # Create date ranges
     date_range = pd.date_range(
         start=sim_starting_date,
-        end=sim_starting_date + datetime.timedelta(minutes=timescale * (simulation_length - 1)),
-        freq=f'{timescale}min'
+        end=sim_starting_date
+        + datetime.timedelta(minutes=timescale * (simulation_length - 1)),
+        freq=f"{timescale}min",
     )
     date_range_print = pd.date_range(start=sim_starting_date, end=sim_date, periods=10)
 
@@ -84,45 +112,49 @@ def plot_grid_metrics(results_path, save_path=None, algorithm_names=None):
         for index, key in enumerate(replay.keys()):
             env = replay[key]
             # Choose label and color for this algorithm
-            label = algorithm_names[index]  # if names were provided, otherwise keys are used.
+            label = algorithm_names[
+                index
+            ]  # if names were provided, otherwise keys are used.
             color = colors[index % len(colors)]
-            
+
             # Plot the total active power (node_active_power + node_ev_power) as a step plot
             ax.step(
                 date_range,
                 env.node_active_power[node, :] + env.node_ev_power[node, :],
                 label=label,
-                where='post',
+                where="post",
                 linewidth=0.5,
-                color=color
+                color=color,
             )
             # If you wish to also plot the individual components, you could uncomment these:
             # ax.step(date_range, env.node_active_power[node, :], label=f'{label} - Node Active Power', where='post', linewidth=0.8, color=color)
             # ax.step(date_range, env.node_ev_power[node, :], label=f'{label} - EV Active Power', where='post', linewidth=0.8, color=color)
 
-        ax.set_title(f'Node {node}', fontsize=8)
+        ax.set_title(f"Node {node}", fontsize=8)
         if node % dim_x == 0:
-            ax.set_ylabel('Power (kW)')
+            ax.set_ylabel("Power (kW)")
         ax.set_xlim([sim_starting_date, sim_date])
         ax.set_xticks(date_range_print)
-        ax.set_xticklabels([f'{d.hour:02d}:{d.minute:02d}' for d in date_range_print], fontsize=4)
-        ax.grid(True, which='minor', axis='both')
-        ax.grid(True, which='major', axis='both')
+        ax.set_xticklabels(
+            [f"{d.hour:02d}:{d.minute:02d}" for d in date_range_print], fontsize=4
+        )
+        ax.grid(True, which="minor", axis="both")
+        ax.grid(True, which="major", axis="both")
 
         # Only add a legend in the first subplot (or adjust as desired)
         if node == 0:
             ax.legend(fontsize=8)
 
     plt.tight_layout()
-    fig_name = f'{save_path}/grid_power.png'
-    plt.savefig(fig_name, format='png', dpi=120, bbox_inches='tight')
+    fig_name = f"{save_path}/grid_power.png"
+    plt.savefig(fig_name, format="png", dpi=120, bbox_inches="tight")
 
-    plt.close('all')
+    plt.close("all")
     plt.figure(figsize=(16, 12))
-    plt.rcParams['font.family'] = ['serif']
+    plt.rcParams["font.family"] = ["serif"]
 
     # Load the results (a dictionary with one env per algorithm)
-    with gzip.open(results_path, 'rb') as f:
+    with gzip.open(results_path, "rb") as f:
         replay = pickle.load(f)
 
     # Use the first algorithm's env to extract common simulation parameters
@@ -137,8 +169,9 @@ def plot_grid_metrics(results_path, save_path=None, algorithm_names=None):
     # Create the full date range used for plotting
     date_range = pd.date_range(
         start=sim_starting_date,
-        end=sim_starting_date + datetime.timedelta(minutes=timescale * (simulation_length - 1)),
-        freq=f'{timescale}min'
+        end=sim_starting_date
+        + datetime.timedelta(minutes=timescale * (simulation_length - 1)),
+        freq=f"{timescale}min",
     )
     date_range_print = pd.date_range(start=sim_starting_date, end=sim_date, periods=10)
 
@@ -147,7 +180,7 @@ def plot_grid_metrics(results_path, save_path=None, algorithm_names=None):
     dim_y = int(np.ceil(number_of_nodes / dim_x))
 
     # Get the default color cycle so that each algorithm gets a unique color.
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     # Use provided algorithm names or default to the replay keys.
     if algorithm_names is None:
@@ -158,7 +191,7 @@ def plot_grid_metrics(results_path, save_path=None, algorithm_names=None):
     # Loop over nodes (each subplot shows one node's voltage curves from all algorithms)
     for node in range(number_of_nodes):
         ax = plt.subplot(dim_x, dim_y, node + 1)
-        
+
         # For each algorithm, plot the voltage for this node in a different color.
         for index, key in enumerate(replay.keys()):
             env = replay[key]
@@ -168,147 +201,155 @@ def plot_grid_metrics(results_path, save_path=None, algorithm_names=None):
                 date_range,
                 env.node_voltage[node, :],
                 label=label,
-                where='post',
+                where="post",
                 linewidth=0.5,
                 color=color,
-                alpha=0.8
+                alpha=0.8,
             )
-        
+
         # Plot voltage limits (same for all algorithms)
-        ax.plot(date_range, [0.95] * len(date_range), 'r--',linewidth=0.5)
+        ax.plot(date_range, [0.95] * len(date_range), "r--", linewidth=0.5)
         # ax.plot(date_range, [1.05] * len(date_range), 'r--',linewidth=0.5)
-        
-        #set ylim
+
+        # set ylim
         ax.set_ylim([0.92, 1.02])
 
-        ax.set_title(f'Node {node}', fontsize=6)
+        ax.set_title(f"Node {node}", fontsize=6)
         if node % dim_x == 0:
-            ax.set_ylabel('V(pu)')
+            ax.set_ylabel("V(pu)")
         ax.set_xlim([sim_starting_date, sim_date])
         ax.set_xticks(date_range_print)
-        ax.set_xticklabels([f'{d.hour:02d}:{d.minute:02d}' for d in date_range_print], fontsize=4)
-        ax.tick_params(axis='y', labelsize=4)
-        
+        ax.set_xticklabels(
+            [f"{d.hour:02d}:{d.minute:02d}" for d in date_range_print], fontsize=4
+        )
+        ax.tick_params(axis="y", labelsize=4)
+
         # Only add a legend to the first subplot (or adjust as needed)
         if node == 0:
             ax.legend(fontsize=5)
-            
-        ax.grid(True, which='minor', axis='both')
-        ax.grid(True, which='major', axis='both')
+
+        ax.grid(True, which="minor", axis="both")
+        ax.grid(True, which="major", axis="both")
 
     plt.tight_layout()
-    fig_name = f'{save_path}/grid_voltage.png'
-    plt.savefig(fig_name, format='png', dpi=200, bbox_inches='tight')
-    fig_name = f'{save_path}/grid_voltage.pdf'
-    plt.savefig(fig_name, format='pdf', dpi=200, bbox_inches='tight')
+    fig_name = f"{save_path}/grid_voltage.png"
+    plt.savefig(fig_name, format="png", dpi=200, bbox_inches="tight")
+    fig_name = f"{save_path}/grid_voltage.pdf"
+    plt.savefig(fig_name, format="pdf", dpi=200, bbox_inches="tight")
 
 
 def plot_total_power(results_path, save_path=None, algorithm_names=None):
-
     # Load the env pickle files
-    with open(results_path, 'rb') as f:
+    with open(results_path, "rb") as f:
         replay = pickle.load(f)
 
     plt.figure(figsize=(14, 7))
-    plt.rc('font', family='serif')
+    plt.rc("font", family="serif")
     light_blue = np.array([0.529, 0.808, 0.922, 1])
     gold = np.array([1, 0.843, 0, 1])
 
     for index, key in enumerate(replay.keys()):
         env = replay[key]
 
-        date_range = pd.date_range(start=env.sim_starting_date,
-                                   end=env.sim_starting_date +
-                                   (env.simulation_length - 1) *
-                                   datetime.timedelta(
-                                       minutes=env.timescale),
-                                   freq=f'{env.timescale}min')
+        date_range = pd.date_range(
+            start=env.sim_starting_date,
+            end=env.sim_starting_date
+            + (env.simulation_length - 1) * datetime.timedelta(minutes=env.timescale),
+            freq=f"{env.timescale}min",
+        )
         date_range_print = pd.date_range(
             start=env.sim_starting_date, end=env.sim_end_date, periods=10
         )
 
         counter = 1
         dim_x = int(np.ceil(np.sqrt(env.number_of_transformers)))
-        dim_y = int(np.ceil(env.number_of_transformers/dim_x))
+        dim_y = int(np.ceil(env.number_of_transformers / dim_x))
         for tr in env.transformers:
-
             plt.subplot(dim_x, dim_y, counter)
             df = pd.DataFrame([], index=date_range)
 
-            if env.config['inflexible_loads']['include']:
-                df['inflexible'] = env.tr_inflexible_loads[tr.id, :]
-            if env.config['solar_power']['include']:
-                df['solar'] = env.tr_solar_power[tr.id, :]
+            if env.config["inflexible_loads"]["include"]:
+                df["inflexible"] = env.tr_inflexible_loads[tr.id, :]
+            if env.config["solar_power"]["include"]:
+                df["solar"] = env.tr_solar_power[tr.id, :]
 
             for cs in tr.cs_ids:
                 df[cs] = env.cs_power[cs, :]
 
             if index == 0:
                 # plot the inflexible loads as a fill between
-                if env.config['inflexible_loads']['include']:
-                    plt.fill_between(df.index,
-                                     np.array([0]*len(df.index)),
-                                     df['inflexible'],
-                                     step='post',
-                                     alpha=0.7,
-                                     color=light_blue,
-                                     linestyle='--',
-                                     linewidth=2,
-                                     label='Inflexible Loads')
+                if env.config["inflexible_loads"]["include"]:
+                    plt.fill_between(
+                        df.index,
+                        np.array([0] * len(df.index)),
+                        df["inflexible"],
+                        step="post",
+                        alpha=0.7,
+                        color=light_blue,
+                        linestyle="--",
+                        linewidth=2,
+                        label="Inflexible Loads",
+                    )
 
                 # plot the solar power as a fill between the inflexible loads and the solar power
-                if env.config['solar_power']['include']:
-                    plt.fill_between(df.index,
-                                     df['inflexible'],
-                                     df['solar'] + df['inflexible'],
-                                     step='post',
-                                     alpha=0.7,
-                                     color=gold,
-                                     linestyle='--',
-                                     linewidth=2,
-                                     label='Solar Power')
+                if env.config["solar_power"]["include"]:
+                    plt.fill_between(
+                        df.index,
+                        df["inflexible"],
+                        df["solar"] + df["inflexible"],
+                        step="post",
+                        alpha=0.7,
+                        color=gold,
+                        linestyle="--",
+                        linewidth=2,
+                        label="Solar Power",
+                    )
 
-                if env.config['demand_response']['include']:
-                    plt.fill_between(df.index,
-                                     np.array([tr.max_power.max()]
-                                              * len(df.index)),
-                                     tr.max_power,
-                                     step='post',
-                                     alpha=0.7,
-                                     color='r',
-                                     hatch='xx',
-                                     linestyle='--',
-                                     linewidth=2,
-                                     label='Demand Response Event')
+                if env.config["demand_response"]["include"]:
+                    plt.fill_between(
+                        df.index,
+                        np.array([tr.max_power.max()] * len(df.index)),
+                        tr.max_power,
+                        step="post",
+                        alpha=0.7,
+                        color="r",
+                        hatch="xx",
+                        linestyle="--",
+                        linewidth=2,
+                        label="Demand Response Event",
+                    )
 
-                plt.step(df.index,
-                         #  tr.max_power
-                         [tr.max_power.max()] * len(df.index),
-                         where='post',
-                         color='r',
-                         linestyle='--',
-                         linewidth=2,
-                         label='Transformer Max Power')
-                plt.plot(
-                    [env.sim_starting_date, env.sim_end_date], [0, 0], "black"
+                plt.step(
+                    df.index,
+                    #  tr.max_power
+                    [tr.max_power.max()] * len(df.index),
+                    where="post",
+                    color="r",
+                    linestyle="--",
+                    linewidth=2,
+                    label="Transformer Max Power",
                 )
+                plt.plot([env.sim_starting_date, env.sim_end_date], [0, 0], "black")
 
-            df['total'] = df.sum(axis=1)
+            df["total"] = df.sum(axis=1)
 
             # plot total and use different color and linestyle for each algorithm
-            plt.step(df.index, df['total'],
-                     color=color_list[index],
-                     where='post',
-                     linestyle='-',
-                     linewidth=1,
-                     marker=marker_list[index],
-                     label=algorithm_names[index])
+            plt.step(
+                df.index,
+                df["total"],
+                color=color_list[index],
+                where="post",
+                linestyle="-",
+                linewidth=1,
+                marker=marker_list[index],
+                label=algorithm_names[index],
+            )
 
             counter += 1
 
-    plt.title(f'Transformer {tr.id+1}', fontsize=28)
-    plt.xlabel(f'Time', fontsize=28)
-    plt.ylabel(f'Power (kW)', fontsize=28)
+    plt.title(f"Transformer {tr.id + 1}", fontsize=28)
+    plt.xlabel(f"Time", fontsize=28)
+    plt.ylabel(f"Power (kW)", fontsize=28)
     plt.xlim([env.sim_starting_date, env.sim_end_date])
     plt.yticks(fontsize=28)
     plt.xticks(
@@ -319,146 +360,158 @@ def plot_total_power(results_path, save_path=None, algorithm_names=None):
         ha="right",
     )
     # put legend under the plot
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
-               fancybox=True, shadow=True, ncol=3, fontsize=24)
+    plt.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.15),
+        fancybox=True,
+        shadow=True,
+        ncol=3,
+        fontsize=24,
+    )
 
-    plt.grid(True, which='minor', axis='both')
+    plt.grid(True, which="minor", axis="both")
     plt.tight_layout()
 
-    fig_name = f'{save_path}/Transformer_Aggregated_Power.png'
-    plt.savefig(fig_name, format='png',
-                dpi=60, bbox_inches='tight')
+    fig_name = f"{save_path}/Transformer_Aggregated_Power.png"
+    plt.savefig(fig_name, format="png", dpi=60, bbox_inches="tight")
 
 
 def plot_total_power_V2G(results_path, save_path=None, algorithm_names=None):
-
     # Load the env pickle files
-    with open(results_path, 'rb') as f:
+    with open(results_path, "rb") as f:
         replay = pickle.load(f)
 
-    plt.close('all')
+    plt.close("all")
     fig, ax = plt.subplots(figsize=(14, 7))
-    plt.grid(True, which='major', axis='both')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
+    plt.grid(True, which="major", axis="both")
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
 
-    ax.spines['left'].set_linewidth(2)
+    ax.spines["left"].set_linewidth(2)
     # ax.spines['bottom'].set_linewidth(2)
 
-    plt.rc('font', family='serif')
+    plt.rc("font", family="serif")
 
     light_blue = np.array([0.529, 0.808, 0.922, 1])
     gold = np.array([1, 0.843, 0, 1])
 
-    color_list_map = plt.cm.get_cmap('Set1', len(replay.keys()))
+    color_list_map = plt.cm.get_cmap("Set1", len(replay.keys()))
     color_list = color_list_map(np.linspace(0, 1, len(replay.keys())))
 
     for index, key in enumerate(replay.keys()):
         env = replay[key]
 
-        date_range = pd.date_range(start=env.sim_starting_date,
-                                   end=env.sim_starting_date +
-                                   (env.simulation_length - 1) *
-                                   datetime.timedelta(
-                                       minutes=env.timescale),
-                                   freq=f'{env.timescale}min')
+        date_range = pd.date_range(
+            start=env.sim_starting_date,
+            end=env.sim_starting_date
+            + (env.simulation_length - 1) * datetime.timedelta(minutes=env.timescale),
+            freq=f"{env.timescale}min",
+        )
         date_range_print = pd.date_range(
             start=env.sim_starting_date, end=env.sim_end_date, periods=7
         )
 
         counter = 1
         dim_x = int(np.ceil(np.sqrt(env.number_of_transformers)))
-        dim_y = int(np.ceil(env.number_of_transformers/dim_x))
+        dim_y = int(np.ceil(env.number_of_transformers / dim_x))
         for tr in env.transformers:
-
             plt.subplot(dim_x, dim_y, counter)
             df = pd.DataFrame([], index=date_range)
 
-            if env.config['inflexible_loads']['include']:
-                df['inflexible'] = env.tr_inflexible_loads[tr.id, :]
-            if env.config['solar_power']['include']:
-                df['solar'] = env.tr_solar_power[tr.id, :]
+            if env.config["inflexible_loads"]["include"]:
+                df["inflexible"] = env.tr_inflexible_loads[tr.id, :]
+            if env.config["solar_power"]["include"]:
+                df["solar"] = env.tr_solar_power[tr.id, :]
 
             for cs in tr.cs_ids:
                 df[cs] = env.cs_power[cs, :]
 
             if index == 0:
                 # plot the inflexible loads as a fill between
-                if env.config['inflexible_loads']['include']:
-                    plt.fill_between(df.index,
-                                     np.array([0]*len(df.index)),
-                                     df['inflexible'],
-                                     step='post',
-                                     alpha=0.3,
-                                     color=light_blue,
-                                     linestyle='--',
-                                     linewidth=2,
-                                     label='Inflexible Loads')
+                if env.config["inflexible_loads"]["include"]:
+                    plt.fill_between(
+                        df.index,
+                        np.array([0] * len(df.index)),
+                        df["inflexible"],
+                        step="post",
+                        alpha=0.3,
+                        color=light_blue,
+                        linestyle="--",
+                        linewidth=2,
+                        label="Inflexible Loads",
+                    )
 
                 # plot the solar power as a fill between the inflexible loads and the solar power
-                if env.config['solar_power']['include']:
-                    plt.fill_between(df.index,
-                                     df['inflexible'],
-                                     df['solar'] + df['inflexible'],
-                                     step='post',
-                                     alpha=0.8,
-                                     color=gold,
-                                     linestyle='--',
-                                     linewidth=2,
-                                     label='Solar Power')
+                if env.config["solar_power"]["include"]:
+                    plt.fill_between(
+                        df.index,
+                        df["inflexible"],
+                        df["solar"] + df["inflexible"],
+                        step="post",
+                        alpha=0.8,
+                        color=gold,
+                        linestyle="--",
+                        linewidth=2,
+                        label="Solar Power",
+                    )
 
-                if env.config['demand_response']['include']:
-                    plt.fill_between(df.index,
-                                     np.array([tr.max_power.max()]
-                                              * len(df.index)),
-                                     tr.max_power,
-                                     step='post',
-                                     alpha=0.7,
-                                     color='r',
-                                     hatch='xx',
-                                     linestyle='--',
-                                     linewidth=2,
-                                     label='Demand Response Event')
+                if env.config["demand_response"]["include"]:
+                    plt.fill_between(
+                        df.index,
+                        np.array([tr.max_power.max()] * len(df.index)),
+                        tr.max_power,
+                        step="post",
+                        alpha=0.7,
+                        color="r",
+                        hatch="xx",
+                        linestyle="--",
+                        linewidth=2,
+                        label="Demand Response Event",
+                    )
 
-                plt.step(df.index,
-                         #  tr.max_power
-                         [-tr.max_power.max()] * len(df.index),
-                         where='post',
-                         color='r',
-                         linestyle='--',
-                         linewidth=2,
-                         alpha=0.7,
-                         #  label='Transf. Limit'
-                         )
-
-                plt.step(df.index,
-                         #  tr.max_power
-                         [tr.max_power.max()] * len(df.index),
-                         where='post',
-                         color='r',
-                         linestyle='--',
-                         linewidth=2,
-                         alpha=0.7,
-                         label='Transf. Limit')
-                plt.plot(
-                    [env.sim_starting_date, env.sim_end_date], [0, 0], "black"
+                plt.step(
+                    df.index,
+                    #  tr.max_power
+                    [-tr.max_power.max()] * len(df.index),
+                    where="post",
+                    color="r",
+                    linestyle="--",
+                    linewidth=2,
+                    alpha=0.7,
+                    #  label='Transf. Limit'
                 )
 
-            df['total'] = df.sum(axis=1)
+                plt.step(
+                    df.index,
+                    #  tr.max_power
+                    [tr.max_power.max()] * len(df.index),
+                    where="post",
+                    color="r",
+                    linestyle="--",
+                    linewidth=2,
+                    alpha=0.7,
+                    label="Transf. Limit",
+                )
+                plt.plot([env.sim_starting_date, env.sim_end_date], [0, 0], "black")
+
+            df["total"] = df.sum(axis=1)
 
             # plot total and use different color and linestyle for each algorithm
-            plt.step(df.index, df['total'],
-                     color=color_list[index],
-                     where='post',
-                     linestyle='-',
-                     linewidth=1,
-                     marker=marker_list[index],
-                     label=algorithm_names[index])
+            plt.step(
+                df.index,
+                df["total"],
+                color=color_list[index],
+                where="post",
+                linestyle="-",
+                linewidth=1,
+                marker=marker_list[index],
+                label=algorithm_names[index],
+            )
 
             counter += 1
 
-    plt.ylabel(f'Power (kW)', fontsize=28)
+    plt.ylabel(f"Power (kW)", fontsize=28)
     plt.xlim([env.sim_starting_date, env.sim_end_date])
     plt.yticks(fontsize=28)
     plt.xticks(
@@ -469,47 +522,54 @@ def plot_total_power_V2G(results_path, save_path=None, algorithm_names=None):
         ha="right",
     )
     # put legend under the plot
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
-               fancybox=True, shadow=True, ncol=3, fontsize=24)
+    plt.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.1),
+        fancybox=True,
+        shadow=True,
+        ncol=3,
+        fontsize=24,
+    )
 
-    fig_name = f'{save_path}/Transformer_Aggregated_Power_Prices.png'
+    fig_name = f"{save_path}/Transformer_Aggregated_Power_Prices.png"
 
-    plt.savefig(fig_name, format='png',
-                dpi=60, bbox_inches='tight')
+    plt.savefig(fig_name, format="png", dpi=60, bbox_inches="tight")
 
     plt.show()
 
 
 def plot_comparable_EV_SoC(results_path, save_path=None, algorithm_names=None):
-    '''
+    """
     This function is used to plot the SoC of the EVs in the same plot
-    '''
+    """
 
-    with open(results_path, 'rb') as f:
+    with open(results_path, "rb") as f:
         replay = pickle.load(f)
 
-    plt.close('all')
-    plt.figure(figsize=(10, 7))
-    plt.rc('font', family='serif')
+    plt.close("all")
+    fig = plt.figure(figsize=(10, 7))
+    plt.rc("font", family="serif")
+
+    # Collect legend handles and labels from all subplots
+    legend_handles = {}  # Use dict to avoid duplicates, keyed by algorithm name
 
     for index, key in enumerate(replay.keys()):
         env = replay[key]
 
-        date_range = pd.date_range(start=env.sim_starting_date,
-                                   end=env.sim_starting_date +
-                                   (env.simulation_length - 1) *
-                                   datetime.timedelta(
-                                       minutes=env.timescale),
-                                   freq=f'{env.timescale}min')
+        date_range = pd.date_range(
+            start=env.sim_starting_date,
+            end=env.sim_starting_date
+            + (env.simulation_length - 1) * datetime.timedelta(minutes=env.timescale),
+            freq=f"{env.timescale}min",
+        )
         date_range_print = pd.date_range(
             start=env.sim_starting_date, end=env.sim_end_date, periods=10
         )
 
         counter = 1
         dim_x = int(np.ceil(np.sqrt(env.cs)))
-        dim_y = int(np.ceil(env.cs/dim_x))
+        dim_y = int(np.ceil(env.cs / dim_x))
         for cs in env.charging_stations:
-
             plt.subplot(dim_x, dim_y, counter)
             df = pd.DataFrame([], index=date_range)
 
@@ -517,79 +577,100 @@ def plot_comparable_EV_SoC(results_path, save_path=None, algorithm_names=None):
                 df[port] = env.port_energy_level[port, cs.id, :]
 
             # Add another row with one datetime step to make the plot look better
-            df.loc[df.index[-1] +
-                   datetime.timedelta(minutes=env.timescale)] = df.iloc[-1]
+            df.loc[df.index[-1] + datetime.timedelta(minutes=env.timescale)] = df.iloc[
+                -1
+            ]
 
             for port in range(cs.n_ports):
-                for i, (t_arr, t_dep) in enumerate(env.port_arrival[f'{cs.id}.{port}']):
+                for i, (t_arr, t_dep) in enumerate(env.port_arrival[f"{cs.id}.{port}"]):
                     t_dep = t_dep + 1
                     if t_dep > len(df):
                         t_dep = len(df)
                     # x = df.index[t_arr:t_dep]
                     y = df[port].values.T[t_arr:t_dep]
                     # fill y with 0 before and after to match the length of df
-                    y = np.concatenate(
-                        [np.zeros(t_arr), y, np.zeros(len(df) - t_dep)])
+                    y = np.concatenate([np.zeros(t_arr), y, np.zeros(len(df) - t_dep)])
 
-                    plt.step(df.index,
-                             y,
-                             where='post',
-                             color=color_list[index],
-                             marker=marker_list[index],
-                             label=algorithm_names[index])
+                    (line,) = plt.step(
+                        df.index,
+                        y,
+                        where="post",
+                        color=color_list[index],
+                        marker=marker_list[index],
+                        label=algorithm_names[index],
+                    )
 
-            plt.title(f'Charging Station {cs.id + 1}', fontsize=24)
-            plt.ylabel('SoC', fontsize=24)
+                    # Store handle for legend (only need one per algorithm)
+                    if algorithm_names[index] not in legend_handles:
+                        legend_handles[algorithm_names[index]] = line
+
+            plt.title(f"Charging Station {cs.id + 1}", fontsize=24)
+            plt.ylabel("SoC", fontsize=24)
             plt.ylim([0.1, 1])
             plt.xlim([env.sim_starting_date, env.sim_end_date])
-            plt.xticks(ticks=date_range_print,
-                       labels=[f'{d.hour:2d}:{d.minute:02d}' for d in date_range_print], rotation=45,
-                       fontsize=22)
+            plt.xticks(
+                ticks=date_range_print,
+                labels=[f"{d.hour:2d}:{d.minute:02d}" for d in date_range_print],
+                rotation=45,
+                fontsize=22,
+            )
             counter += 1
 
-    plt.legend(loc='upper center', bbox_to_anchor=(1.1, -0.15),
-               fancybox=True, shadow=True, ncol=5, fontsize=24)
+    # Create figure-level legend using collected handles
+    if legend_handles:
+        fig.legend(
+            legend_handles.values(),
+            legend_handles.keys(),
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.02),
+            fancybox=True,
+            shadow=True,
+            ncol=5,
+            fontsize=24,
+        )
 
-    plt.grid(True, which='minor', axis='both')
+    plt.grid(True, which="minor", axis="both")
     plt.tight_layout()
 
-    fig_name = f'{save_path}/EV_Energy_Level.png'
-    plt.savefig(fig_name, format='png',
-                dpi=60, bbox_inches='tight')
+    fig_name = f"{save_path}/EV_Energy_Level.png"
+    plt.savefig(fig_name, format="png", dpi=60, bbox_inches="tight")
 
 
 def plot_comparable_EV_SoC_single(results_path, save_path=None, algorithm_names=None):
-    '''
+    """
     This function is used to plot the SoC of the EVs in the same plot
-    '''
+    """
 
-    with open(results_path, 'rb') as f:
+    with open(results_path, "rb") as f:
         replay = pickle.load(f)
 
-    plt.close('all')
+    plt.close("all")
     fig, ax = plt.subplots(figsize=(12, 6))
-    plt.rc('font', family='serif')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
+    plt.rc("font", family="serif")
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
 
-    ax.spines['left'].set_linewidth(2)
-    ax.spines['bottom'].set_linewidth(2)
+    ax.spines["left"].set_linewidth(2)
+    ax.spines["bottom"].set_linewidth(2)
 
-    plt.grid(True, which='major', axis='both')
+    # Collect legend handles and labels
+    legend_handles = {}  # Use dict to avoid duplicates, keyed by algorithm name
+
+    plt.grid(True, which="major", axis="both")
     for index, key in enumerate(replay.keys()):
         env = replay[key]
 
-        date_range = pd.date_range(start=env.sim_starting_date,
-                                   end=env.sim_starting_date +
-                                   (env.simulation_length - 1) *
-                                   datetime.timedelta(
-                                       minutes=env.timescale),
-                                   freq=f'{env.timescale}min')
+        date_range = pd.date_range(
+            start=env.sim_starting_date,
+            end=env.sim_starting_date
+            + (env.simulation_length - 1) * datetime.timedelta(minutes=env.timescale),
+            freq=f"{env.timescale}min",
+        )
         date_range_print = pd.date_range(
             start=env.sim_starting_date, end=env.sim_end_date, periods=7
         )
 
-        color_list_map = plt.cm.get_cmap('Set1', len(replay.keys()))
+        color_list_map = plt.cm.get_cmap("Set1", len(replay.keys()))
         color_list = color_list_map(np.linspace(0, 1, len(replay.keys())))
 
         counter = 1
@@ -605,39 +686,45 @@ def plot_comparable_EV_SoC_single(results_path, save_path=None, algorithm_names=
                 df[port] = env.port_energy_level[port, cs.id, :]
 
             # Add another row with one datetime step to make the plot look better
-            df.loc[df.index[-1] +
-                   datetime.timedelta(minutes=env.timescale)] = df.iloc[-1]
+            df.loc[df.index[-1] + datetime.timedelta(minutes=env.timescale)] = df.iloc[
+                -1
+            ]
 
             for port in range(cs.n_ports):
-                for i, (t_arr, t_dep) in enumerate(env.port_arrival[f'{cs.id}.{port}']):
+                for i, (t_arr, t_dep) in enumerate(env.port_arrival[f"{cs.id}.{port}"]):
                     t_dep = t_dep + 1
                     if t_dep > len(df):
                         t_dep = len(df)
                     # x = df.index[t_arr:t_dep]
                     y = df[port].values.T[t_arr:t_dep]
                     # fill y with 0 before and after to match the length of df
-                    y = np.concatenate(
-                        [np.zeros(t_arr), y, np.zeros(len(df) - t_dep)])
+                    y = np.concatenate([np.zeros(t_arr), y, np.zeros(len(df) - t_dep)])
 
-                    plt.step(df.index,
-                             y,
-                             where='post',
-                             color=color_list[index],
-                             marker=marker_list[index],
-                             alpha=0.8,
-                             label=algorithm_names[index])
+                    (line,) = plt.step(
+                        df.index,
+                        y,
+                        where="post",
+                        color=color_list[index],
+                        marker=marker_list[index],
+                        alpha=0.8,
+                        label=algorithm_names[index],
+                    )
+
+                    # Store handle for legend (only need one per algorithm)
+                    if algorithm_names[index] not in legend_handles:
+                        legend_handles[algorithm_names[index]] = line
 
             # plt.title(f'Charging Station {cs.id + 1}', fontsize=24)
 
             if counter == 1:
-                plt.ylabel('SoC', fontsize=28)
-                plt.yticks(np.arange(0, 1.1, 0.2),
-                           fontsize=28)
+                plt.ylabel("SoC", fontsize=28)
+                plt.yticks(np.arange(0, 1.1, 0.2), fontsize=28)
 
             else:
                 plt.yticks(fontsize=28)
-                plt.yticks(np.arange(0, 1.1, 0.1),
-                           labels=[' ' for d in np.arange(0, 1.1, 0.1)])
+                plt.yticks(
+                    np.arange(0, 1.1, 0.1), labels=[" " for d in np.arange(0, 1.1, 0.1)]
+                )
 
             plt.ylim([0.1, 1.09])
             plt.xlim([env.sim_starting_date, env.sim_end_date])
@@ -650,50 +737,59 @@ def plot_comparable_EV_SoC_single(results_path, save_path=None, algorithm_names=
             )
             counter += 1
 
-    # plt.legend(loc='upper center', bbox_to_anchor=(0, -0.15),
-    #            fancybox=True, shadow=True, ncol=, fontsize=24)
+    # Create figure-level legend using collected handles
+    if legend_handles:
+        fig.legend(
+            legend_handles.values(),
+            legend_handles.keys(),
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.02),
+            fancybox=True,
+            shadow=True,
+            ncol=4,
+            fontsize=18,
+        )
 
     plt.tight_layout()
 
-    fig_name = f'{save_path}/EV_Energy_Level_single.png'
-    plt.savefig(fig_name, format='png',
-                dpi=60, bbox_inches='tight')
+    fig_name = f"{save_path}/EV_Energy_Level_single.png"
+    plt.savefig(fig_name, format="png", dpi=60, bbox_inches="tight")
 
     plt.show()
 
 
 def plot_comparable_CS_Power(results_path, save_path=None, algorithm_names=None):
-    '''
+    """
     This function is used to plot the SoC of the EVs in the same plot
-    '''
+    """
 
-    with open(results_path, 'rb') as f:
+    with open(results_path, "rb") as f:
         replay = pickle.load(f)
 
-    plt.close('all')
+    plt.close("all")
     fig, ax = plt.subplots(figsize=(12, 6))
-    plt.rc('font', family='serif')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
+    plt.rc("font", family="serif")
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
 
-    ax.spines['left'].set_linewidth(2)
-    ax.spines['bottom'].set_linewidth(2)
+    ax.spines["left"].set_linewidth(2)
+    ax.spines["bottom"].set_linewidth(2)
 
-    plt.grid(True, which='major', axis='both')
+    plt.grid(True, which="major", axis="both")
     for index, key in enumerate(replay.keys()):
         env = replay[key]
 
-        date_range = pd.date_range(start=env.sim_starting_date,
-                                   end=env.sim_starting_date +
-                                   (env.simulation_length - 1) *
-                                   datetime.timedelta(
-                                       minutes=env.timescale),
-                                   freq=f'{env.timescale}min')
+        date_range = pd.date_range(
+            start=env.sim_starting_date,
+            end=env.sim_starting_date
+            + (env.simulation_length - 1) * datetime.timedelta(minutes=env.timescale),
+            freq=f"{env.timescale}min",
+        )
         date_range_print = pd.date_range(
             start=env.sim_starting_date, end=env.sim_end_date, periods=7
         )
 
-        color_list_map = plt.cm.get_cmap('Set1', len(replay.keys()))
+        color_list_map = plt.cm.get_cmap("Set1", len(replay.keys()))
         color_list = color_list_map(np.linspace(0, 1, len(replay.keys())))
 
         counter = 1
@@ -712,34 +808,35 @@ def plot_comparable_CS_Power(results_path, save_path=None, algorithm_names=None)
             df = df * cs.voltage * math.sqrt(cs.phases) / 1000
 
             # Add another row with one datetime step to make the plot look better
-            df.loc[df.index[-1] +
-                   datetime.timedelta(minutes=env.timescale)] = df.iloc[-1]
+            df.loc[df.index[-1] + datetime.timedelta(minutes=env.timescale)] = df.iloc[
+                -1
+            ]
 
             for port in range(cs.n_ports):
-                for i, (t_arr, t_dep) in enumerate(env.port_arrival[f'{cs.id}.{port}']):
+                for i, (t_arr, t_dep) in enumerate(env.port_arrival[f"{cs.id}.{port}"]):
                     t_dep = t_dep + 1
                     if t_dep > len(df):
                         t_dep = len(df)
                     # x = df.index[t_arr:t_dep]
                     y = df[port].values.T[t_arr:t_dep]
                     # fill y with 0 before and after to match the length of df
-                    y = np.concatenate(
-                        [np.zeros(t_arr), y, np.zeros(len(df) - t_dep)])
+                    y = np.concatenate([np.zeros(t_arr), y, np.zeros(len(df) - t_dep)])
 
-                    plt.step(df.index,
-                             y,
-                             where='post',
-                             color=color_list[index],
-                             marker=marker_list[index],
-                             alpha=0.8,
-                             label=algorithm_names[index])
+                    plt.step(
+                        df.index,
+                        y,
+                        where="post",
+                        color=color_list[index],
+                        marker=marker_list[index],
+                        alpha=0.8,
+                        label=algorithm_names[index],
+                    )
 
             # plt.title(f'Charging Station {cs.id + 1}', fontsize=24)
 
             if counter == 1:
-                plt.ylabel('Power (kW)', fontsize=28)
-                plt.yticks([-22, -11, 0, 11, 22],
-                           fontsize=28)
+                plt.ylabel("Power (kW)", fontsize=28)
+                plt.yticks([-22, -11, 0, 11, 22], fontsize=28)
 
             else:
                 plt.yticks(fontsize=28)
@@ -762,51 +859,50 @@ def plot_comparable_CS_Power(results_path, save_path=None, algorithm_names=None)
 
     plt.tight_layout()
 
-    fig_name = f'{save_path}/CS_Power_single.png'
-    plt.savefig(fig_name, format='png',
-                dpi=60, bbox_inches='tight')
+    fig_name = f"{save_path}/CS_Power_single.png"
+    plt.savefig(fig_name, format="png", dpi=60, bbox_inches="tight")
 
     plt.show()
 
 
 def plot_actual_power_vs_setpoint(results_path, save_path=None, algorithm_names=None):
-    '''
+    """
     This function is used to plot the actual power vs the setpoint power.
     It plots the behavior of each algorithm in subplots vertically.
-    '''
+    """
 
-    with open(results_path, 'rb') as f:
+    with open(results_path, "rb") as f:
         replay = pickle.load(f)
 
-    plt.close('all')
+    plt.close("all")
     plt.figure(figsize=(7, 11))
-    plt.rc('font', family='serif')
+    plt.rc("font", family="serif")
 
     for index, key in enumerate(replay.keys()):
         env = replay[key]
 
-        date_range = pd.date_range(start=env.sim_starting_date,
-                                   end=env.sim_starting_date +
-                                   (env.simulation_length - 1) *
-                                   datetime.timedelta(
-                                       minutes=env.timescale),
-                                   freq=f'{env.timescale}min')
+        date_range = pd.date_range(
+            start=env.sim_starting_date,
+            end=env.sim_starting_date
+            + (env.simulation_length - 1) * datetime.timedelta(minutes=env.timescale),
+            freq=f"{env.timescale}min",
+        )
         date_range_print = pd.date_range(
             start=env.sim_starting_date, end=env.sim_end_date, periods=7
         )
 
         # plot the actual power vs the setpoint power for each algorithm in subplots
-        plt.subplot(len(replay), 1, index+1)
-        plt.grid(True, which='major', axis='both')
+        plt.subplot(len(replay), 1, index + 1)
+        plt.grid(True, which="major", axis="both")
 
         actual_power = env.current_power_usage
         setpoints = env.power_setpoints
 
-        plt.step(date_range, actual_power.T, alpha=0.9, color='#00429d')
-        plt.step(date_range, setpoints.T, alpha=1, color='#93003a')
+        plt.step(date_range, actual_power.T, alpha=0.9, color="#00429d")
+        plt.step(date_range, setpoints.T, alpha=1, color="#93003a")
 
-        plt.axhline(0, color='black', lw=2)
-        plt.title(f'{algorithm_names[index]}', fontsize=22)
+        plt.axhline(0, color="black", lw=2)
+        plt.title(f"{algorithm_names[index]}", fontsize=22)
 
         plt.yticks(fontsize=22)
 
@@ -819,33 +915,43 @@ def plot_actual_power_vs_setpoint(results_path, save_path=None, algorithm_names=
             )
             # plt.xlabel('Time', fontsize=28)
         else:
-            plt.xticks(ticks=date_range_print,
-                       labels=[' ' for d in date_range_print])
+            plt.xticks(ticks=date_range_print, labels=[" " for d in date_range_print])
 
         if index == len(replay) // 2:
-            plt.ylabel('Power (kW)', fontsize=22)
+            plt.ylabel("Power (kW)", fontsize=22)
 
         plt.xlim([env.sim_starting_date, env.sim_end_date])
-        plt.ylim([0, 1.1*env.current_power_usage.max()])
+
+        # Avoid setting identical ylims when max power is zero
+        max_power = env.current_power_usage.max()
+        if max_power > 0:
+            plt.ylim([0, 1.1 * max_power])
+        else:
+            plt.ylim([0, 1])  # Default fallback for zero power
 
     # Put the legend under the plot in a separate axis
-    plt.legend(['Actual Power', 'Setpoint'], loc='upper center',
-               bbox_to_anchor=(0.5, -0.5),
-               fancybox=True, shadow=True, ncol=2, fontsize=22)
+    plt.legend(
+        ["Actual Power", "Setpoint"],
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.5),
+        fancybox=True,
+        shadow=True,
+        ncol=2,
+        fontsize=22,
+    )
 
     plt.tight_layout()
-    fig_name = f'{save_path}/Actual_vs_Setpoint_Power.png'
-    plt.savefig(fig_name, format='png',
-                dpi=60, bbox_inches='tight')
+    fig_name = f"{save_path}/Actual_vs_Setpoint_Power.png"
+    plt.savefig(fig_name, format="png", dpi=60, bbox_inches="tight")
 
 
 def plot_prices(results_path, save_path=None, algorithm_names=None):
-    with open(results_path, 'rb') as f:
+    with open(results_path, "rb") as f:
         replay = pickle.load(f)
 
-    plt.close('all')
+    plt.close("all")
     fig, ax = plt.subplots(figsize=(12, 5))
-    plt.rc('font', family='serif')
+    plt.rc("font", family="serif")
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.spines["left"].set_linewidth(2)
@@ -870,10 +976,12 @@ def plot_prices(results_path, save_path=None, algorithm_names=None):
     charge_prices = env.charge_prices[0, :]
     discharge_prices = env.discharge_prices[0, :]
 
-    plt.step(date_range, -charge_prices, alpha=0.9,
-             color='#00429d', label='Charge Prices')
-    plt.step(date_range, discharge_prices, alpha=1,
-             color='#93003a', label='Discharge Prices')
+    plt.step(
+        date_range, -charge_prices, alpha=0.9, color="#00429d", label="Charge Prices"
+    )
+    plt.step(
+        date_range, discharge_prices, alpha=1, color="#93003a", label="Discharge Prices"
+    )
 
     plt.xlim([env.sim_starting_date, env.sim_end_date])
     # plt.ylim()
@@ -889,14 +997,13 @@ def plot_prices(results_path, save_path=None, algorithm_names=None):
         fontsize=20,
         ha="right",
     )
-    plt.ylabel('Price (€/kWh)', fontsize=28)
+    plt.ylabel("Price (€/kWh)", fontsize=28)
 
     plt.legend(fontsize=28)
 
     # show grid lines
 
     # plt.tight_layout()
-    fig_name = f'{save_path}/Prices.png'
-    plt.savefig(fig_name, format='png',
-                dpi=60, bbox_inches='tight')
+    fig_name = f"{save_path}/Prices.png"
+    plt.savefig(fig_name, format="png", dpi=60, bbox_inches="tight")
     plt.show()
