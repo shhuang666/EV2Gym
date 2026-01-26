@@ -114,7 +114,7 @@ class ActionLoggingCallback(BaseCallback):
         if self.use_wandb and wandb.run is not None:
             wandb.log(stats, step=self.num_timesteps)
 
-        if self.verbose > 0 and len(self.rollout_clipped_actions) > 0:
+        if self.verbose > 1 and len(self.rollout_clipped_actions) > 0:
             print(
                 f"Rollout ended at step {self.num_timesteps}: "
                 f"Actions mean={stats.get('rollout/actions_mean', 0):.4f}, "
@@ -173,6 +173,12 @@ if __name__ == "__main__":
     parser.add_argument('--state_function', type=str, default=None)
     parser.add_argument('--eval_episodes', type=int, default=100, help='Number of episodes to evaluate after training')
     parser.add_argument('--no_wandb', action='store_true', help='Disable wandb logging')
+    parser.add_argument(
+        "--verbose",
+        type=int,
+        default=1,
+        help="Verbosity level (0=quiet, 1=info, 2=debug)",
+    )
 
     args = parser.parse_args()
     algorithm = args.algorithm
@@ -182,6 +188,7 @@ if __name__ == "__main__":
     reward_function_arg = args.reward_function
     state_function_arg = args.state_function
     use_wandb = not args.no_wandb
+    verbose = args.verbose
 
     config = yaml.load(open(config_file, 'r'), Loader=yaml.FullLoader)
 
@@ -250,26 +257,35 @@ if __name__ == "__main__":
                                  deterministic=True)
 
     if algorithm == "ddpg":
-        model = DDPG("MlpPolicy", env, verbose=1,
-                    learning_rate = 1e-3,
-                    buffer_size = 1_000_000,  # 1e6
-                    learning_starts = 100,
-                    batch_size = 100,
-                    tau = 0.005,
-                    gamma = 0.99,                     
-                     device=device, tensorboard_log="./logs/")
+        model = DDPG(
+            "MlpPolicy",
+            env,
+            verbose=verbose,
+            learning_rate=1e-3,
+            buffer_size=1_000_000,  # 1e6
+            learning_starts=100,
+            batch_size=100,
+            tau=0.005,
+            gamma=0.99,
+            device=device,
+            tensorboard_log="./logs/",
+        )
     elif algorithm == "td3":
-        model = TD3("MlpPolicy", env, verbose=1,
-                    device=device, tensorboard_log="./logs/")
+        model = TD3(
+            "MlpPolicy", env, verbose=verbose, device=device, tensorboard_log="./logs/"
+        )
     elif algorithm == "sac":
-        model = SAC("MlpPolicy", env, verbose=1,
-                    device=device, tensorboard_log="./logs/")
+        model = SAC(
+            "MlpPolicy", env, verbose=verbose, device=device, tensorboard_log="./logs/"
+        )
     elif algorithm == "a2c":
-        model = A2C("MlpPolicy", env, verbose=1,
-                    device=device, tensorboard_log="./logs/")
+        model = A2C(
+            "MlpPolicy", env, verbose=verbose, device=device, tensorboard_log="./logs/"
+        )
     elif algorithm == "ppo":
-        model = PPO("MlpPolicy", env, verbose=1,
-                    device=device, tensorboard_log="./logs/")
+        model = PPO(
+            "MlpPolicy", env, verbose=verbose, device=device, tensorboard_log="./logs/"
+        )
     # elif algorithm == "tqc":
     #     model = TQC("MlpPolicy", env, verbose=1,
     #                 device=device, tensorboard_log="./logs/")
@@ -285,9 +301,12 @@ if __name__ == "__main__":
     else:
         raise ValueError("Unknown algorithm")
 
-    callbacks = [eval_callback, ActionLoggingCallback(use_wandb=use_wandb, verbose=1)]
+    callbacks = [
+        eval_callback,
+        ActionLoggingCallback(use_wandb=use_wandb, verbose=verbose),
+    ]
     if use_wandb:
-        callbacks.insert(0, WandbCallback(verbose=2))
+        callbacks.insert(0, WandbCallback(verbose=verbose))
     
     model.learn(total_timesteps=args.train_steps,
                 progress_bar=True,
