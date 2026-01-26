@@ -69,6 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('--config_file', type=str, default="ev2gym/example_config_files/V2GProfitPlusLoads.yaml")
     parser.add_argument('--reward_function', type=str, default=None)
     parser.add_argument('--state_function', type=str, default=None)
+    parser.add_argument('--eval_episodes', type=int, default=100, help='Number of episodes to evaluate after training')
     parser.add_argument('--no_wandb', action='store_true', help='Disable wandb logging')
 
     args = parser.parse_args()
@@ -201,7 +202,7 @@ if __name__ == "__main__":
     obs = env.reset()
 
     stats = []
-    for i in range(96*100):
+    for i in range(config['simulation_length']*args.eval_episodes):
 
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action)
