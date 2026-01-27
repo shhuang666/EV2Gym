@@ -10,7 +10,7 @@
 # ============================================
 
 # Algorithm to use: ppo, a2c, ddpg, sac, td3
-ALGORITHM="ppo"
+ALGORITHM="sac"
 
 # Device to use: cuda:0, cuda:1, cpu, etc.
 DEVICE="cpu"
@@ -18,22 +18,17 @@ DEVICE="cpu"
 # Number of training steps
 TRAIN_STEPS=20000
 
-# Custom run name (leave empty for auto-generated name)
-RUN_NAME=""
+# Reward function
+# REWARD_FUNCTION=""
 
-# Configuration file path
-CONFIG_FILE="ev2gym/example_config_files/simplePST.yaml"
-
-# Reward function (leave empty to use from config file)
-# Examples: "profit_maximization", "my_module:custom_reward"
-REWARD_FUNCTION=""
-
-# State function (leave empty to use from config file)
-# Examples: "V2G_profit_max", "my_module:custom_state"
-STATE_FUNCTION="ev2gym.rl_agent.state:V2G_profit_max_no_forecast"
+# State function
+# STATE_FUNCTION=""
 
 # Disable wandb logging (set to "true" to disable, "false" to enable)
-NO_WANDB="false"
+# NO_WANDB="true"
+
+# Verbosity level (0=quiet, 1=info, 2=debug)
+# VERBOSE=1
 
 # ============================================
 
@@ -72,6 +67,10 @@ while [[ $# -gt 0 ]]; do
             NO_WANDB="true"
             shift
             ;;
+        --verbose)
+            VERBOSE="$2"
+            shift 2
+            ;;
         --help|-h)
             echo "Usage: ./run_training.sh [options]"
             echo ""
@@ -87,6 +86,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --state_function FUNC    State function (default: from config)"
             echo "                           Examples: V2G_profit_max, my_module:custom_state"
             echo "  --no_wandb              Disable wandb logging (default: enabled)"
+            echo "  --verbose               Verbosity level (default: 1)"
+            echo "                           Options: 0 (quiet), 1 (info), 2 (debug)"
             echo "  --help, -h              Show this help message"
             echo ""
             echo "Examples:"
@@ -105,10 +106,26 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Build the command
-CMD="uv run train_stable_baselines.py --algorithm $ALGORITHM --device $DEVICE --train_steps $TRAIN_STEPS --config_file $CONFIG_FILE"
+CMD="uv run train_stable_baselines.py"
+
+if [ -n "$ALGORITHM" ]; then
+    CMD="$CMD --algorithm $ALGORITHM"
+fi
+
+if [ -n "$DEVICE" ]; then
+    CMD="$CMD --device $DEVICE"
+fi
+
+if [ -n "$TRAIN_STEPS" ]; then
+    CMD="$CMD --train_steps $TRAIN_STEPS"
+fi
 
 if [ -n "$RUN_NAME" ]; then
     CMD="$CMD --run_name $RUN_NAME"
+fi
+
+if [ -n "$CONFIG_FILE" ]; then
+    CMD="$CMD --config_file $CONFIG_FILE"
 fi
 
 if [ -n "$REWARD_FUNCTION" ]; then
@@ -121,6 +138,10 @@ fi
 
 if [ "$NO_WANDB" = "true" ]; then
     CMD="$CMD --no_wandb"
+fi
+
+if [ "$VERBOSE" -gt 0 ]; then
+    CMD="$CMD --verbose $VERBOSE"
 fi
 
 # Print the command being executed
@@ -143,6 +164,9 @@ if [ "$NO_WANDB" = "true" ]; then
     echo "Wandb: Disabled"
 else
     echo "Wandb: Enabled"
+fi
+if [ "$VERBOSE" -gt 0 ]; then
+    echo "Verbose: $VERBOSE"
 fi
 echo "=========================================="
 echo ""

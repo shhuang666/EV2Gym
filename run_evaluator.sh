@@ -10,7 +10,7 @@
 # ============================================
 
 # Configuration file path
-CONFIG_FILE="ev2gym/example_config_files/simplePST.yaml"
+CONFIG_FILE="ev2gym/example_config_files/V2GProfitPlusLoads.yaml"
 
 # Number of test cycles (evaluation episodes)
 N_TEST_CYCLES=5
@@ -18,16 +18,16 @@ N_TEST_CYCLES=5
 # Reward function (leave empty to use default: profit_maximization)
 # Examples: "profit_maximization", "SquaredTrackingErrorReward", "ProfitMax_TrPenalty_UserIncentives"
 # Or custom: "my_module:custom_reward"
-REWARD_FUNCTION=""
+REWARD_FUNCTION="ProfitMax_TrPenalty_UserIncentives"
 
 # State function (leave empty to use default: V2G_profit_max)
 # Examples: "V2G_profit_max", "PublicPST", "V2G_profit_max_loads"
 # Or custom: "my_module:custom_state"
-STATE_FUNCTION="ev2gym.rl_agent.state:V2G_profit_max_no_forecast"
+STATE_FUNCTION="V2G_profit_max_loads"
 
 # Replay path (leave empty to generate new replays)
 # Example: "./replay/10cs_1tr_V2GProfitMax/"
-REPLAY_PATH="replay/eval_2cs_1tr_simplePST_4_algos_5_exp_2026_01_23_288154"
+# REPLAY_PATH="replay/eval_2cs_1tr_simplePST_4_algos_5_exp_2026_01_23_288154"
 
 # ============================================
 
@@ -97,7 +97,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Build the command
-CMD="uv run evaluator.py --config_file $CONFIG_FILE --n_test_cycles $N_TEST_CYCLES"
+CMD="uv run evaluator.py"
+
+if [ -n "$CONFIG_FILE" ]; then
+    CMD="$CMD --config_file $CONFIG_FILE"
+fi
+
+if [ -n "$N_TEST_CYCLES" ]; then
+    CMD="$CMD --n_test_cycles $N_TEST_CYCLES"
+fi
 
 if [ -n "$REWARD_FUNCTION" ]; then
     CMD="$CMD --reward_function $REWARD_FUNCTION"
