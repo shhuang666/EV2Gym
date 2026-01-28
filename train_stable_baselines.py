@@ -5,7 +5,6 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.callbacks import EvalCallback
 # from sb3_contrib import TQC, TRPO, ARS, RecurrentPPO
 
-from ev2gym.models.ev2gym_env import EV2Gym
 from ev2gym.rl_agent.reward import SquaredTrackingErrorReward, ProfitMax_TrPenalty_UserIncentives
 from ev2gym.rl_agent.reward import profit_maximization
 
@@ -229,16 +228,12 @@ if __name__ == "__main__":
                          save_code=True,
                          )
 
-    gym.envs.register(id='evs-v0', entry_point='ev2gym.models.ev2gym_env:EV2Gym',
-                      kwargs={'config_file': config_file,
-                              'verbose': False,
-                              'save_plots': False,
-                              'generate_rnd_game': True,
-                              'reward_function': reward_function,
-                              'state_function': state_function,
-                              })
-
-    env = gym.make('evs-v0')
+    env = gym.make(
+        "EV2Gym-v1",
+        config_file=config_file,
+        reward_function=reward_function,
+        state_function=state_function,
+    )
 
     eval_log_dir = "./eval_logs/" + group_name + "_" + run_name + "/"
     save_path = f"./saved_models/{group_name}/{run_name}/"
