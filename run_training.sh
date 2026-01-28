@@ -25,7 +25,7 @@ TRAIN_STEPS=20000
 # STATE_FUNCTION=""
 
 # Disable wandb logging (set to "true" to disable, "false" to enable)
-# NO_WANDB="true"
+NO_WANDB="true"
 
 # Verbosity level (0=quiet, 1=info, 2=debug)
 # VERBOSE=1
@@ -140,7 +140,7 @@ if [ "$NO_WANDB" = "true" ]; then
     CMD="$CMD --no_wandb"
 fi
 
-if [ "$VERBOSE" -gt 0 ]; then
+if [ -n "$VERBOSE" ] && [ "$VERBOSE" -gt 0 ]; then
     CMD="$CMD --verbose $VERBOSE"
 fi
 
@@ -165,7 +165,7 @@ if [ "$NO_WANDB" = "true" ]; then
 else
     echo "Wandb: Enabled"
 fi
-if [ "$VERBOSE" -gt 0 ]; then
+if [ -n "$VERBOSE" ] && [ "$VERBOSE" -gt 0 ]; then
     echo "Verbose: $VERBOSE"
 fi
 echo "=========================================="
