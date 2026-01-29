@@ -285,7 +285,7 @@ def V2G_profit_max_no_forecast(env, *args):
 
     state.append(env.current_power_usage[env.current_step-1])
 
-    charge_prices = abs(env.charge_prices[0])
+    charge_prices = abs(env.charge_prices[0, env.current_step - 1])
     
     state.append(charge_prices)
     
