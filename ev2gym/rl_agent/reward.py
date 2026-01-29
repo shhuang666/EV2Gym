@@ -1,142 +1,197 @@
-'''This file contains various example reward functions for the RL agent. Users can create their own reward function here or in their own file using the same structure as below
-'''
+"""This file contains various example reward functions for the RL agent. Users can create their own reward function here or in their own file using the same structure as below"""
 
 import math
 import numpy as np
 
-def SquaredTrackingErrorReward(env,*args):
-    '''This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
-    The reward is negative'''
-    
-    reward = - (min(env.power_setpoints[env.current_step-1], env.charge_power_potential[env.current_step-1]) -
-        env.current_power_usage[env.current_step-1])**2
-        
+
+def SquaredTrackingErrorReward(env, *args):
+    """This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
+    The reward is negative"""
+
+    reward = -(
+        (
+            min(
+                env.power_setpoints[env.current_step - 1],
+                env.charge_power_potential[env.current_step - 1],
+            )
+            - env.current_power_usage[env.current_step - 1]
+        )
+        ** 2
+    )
+
     return reward
+
 
 def SqTrError_TrPenalty_UserIncentives(env, _, user_satisfaction_list, *args):
-    ''' This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
-    It penalizes transofrmers that are overloaded    
-    The reward is negative'''
-    
-    tr_max_limit = env.transformers[0].max_power[env.current_step-1]
-    
-    reward = - (min(env.power_setpoints[env.current_step-1], env.charge_power_potential[env.current_step-1],tr_max_limit) -
-        env.current_power_usage[env.current_step-1])**2
-            
+    """This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
+    It penalizes transofrmers that are overloaded
+    The reward is negative"""
+
+    tr_max_limit = env.transformers[0].max_power[env.current_step - 1]
+
+    reward = -(
+        (
+            min(
+                env.power_setpoints[env.current_step - 1],
+                env.charge_power_potential[env.current_step - 1],
+                tr_max_limit,
+            )
+            - env.current_power_usage[env.current_step - 1]
+        )
+        ** 2
+    )
+
     for tr in env.transformers:
         reward -= 100 * tr.get_how_overloaded()
-        
+
     for score in user_satisfaction_list:
         reward -= 1000 * (1 - score)
-                    
+
     return reward
+
 
 def ProfitMax_TrPenalty_UserIncentives(env, total_costs, user_satisfaction_list, *args):
-    
     reward = total_costs
-    
+
     for tr in env.transformers:
-        reward -= 100 * tr.get_how_overloaded()                        
-    
-    for score in user_satisfaction_list:        
-        reward -= 100 * math.exp(-10*score)
-        
+        reward -= 100 * tr.get_how_overloaded()
+
+    for score in user_satisfaction_list:
+        reward -= 100 * math.exp(-10 * score)
+
     return reward
 
-def SquaredTrackingErrorRewardWithPenalty(env,*args):
-    ''' This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
+
+def SquaredTrackingErrorRewardWithPenalty(env, *args):
+    """This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
     The reward is negative
     If the EV is not charging, the reward is penalized
-    '''
-    if env.current_power_usage[env.current_step-1] == 0 and env.charge_power_potential[env.current_step-2] != 0:
-        reward = - (min(env.power_setpoints[env.current_step-1], env.charge_power_potential[env.current_step-1]) -
-            env.current_power_usage[env.current_step-1])**2 - 100
+    """
+    if (
+        env.current_power_usage[env.current_step - 1] == 0
+        and env.charge_power_potential[env.current_step - 2] != 0
+    ):
+        reward = (
+            -(
+                (
+                    min(
+                        env.power_setpoints[env.current_step - 1],
+                        env.charge_power_potential[env.current_step - 1],
+                    )
+                    - env.current_power_usage[env.current_step - 1]
+                )
+                ** 2
+            )
+            - 100
+        )
     else:
-        reward = - (min(env.power_setpoints[env.current_step-1], env.charge_power_potential[env.current_step-1]) -
-            env.current_power_usage[env.current_step-1])**2
-    
+        reward = -(
+            (
+                min(
+                    env.power_setpoints[env.current_step - 1],
+                    env.charge_power_potential[env.current_step - 1],
+                )
+                - env.current_power_usage[env.current_step - 1]
+            )
+            ** 2
+        )
+
     return reward
 
-def SimpleReward(env,*args):
-    '''This reward function does not consider the charge power potential'''
-    
-    reward = - (env.power_setpoints[env.current_step-1] - env.current_power_usage[env.current_step-1])**2
-    
+
+def SimpleReward(env, *args):
+    """This reward function does not consider the charge power potential"""
+
+    reward = -(
+        (
+            env.power_setpoints[env.current_step - 1]
+            - env.current_power_usage[env.current_step - 1]
+        )
+        ** 2
+    )
+
     return reward
 
-def MinimizeTrackerSurplusWithChargeRewards(env,*args):
-    ''' This reward function minimizes the tracker surplus and gives a reward for charging '''
-    
+
+def MinimizeTrackerSurplusWithChargeRewards(env, *args):
+    """This reward function minimizes the tracker surplus and gives a reward for charging"""
+
     reward = 0
-    if env.power_setpoints[env.current_step-1] < env.current_power_usage[env.current_step-1]:
-            reward -= (env.current_power_usage[env.current_step-1]-env.power_setpoints[env.current_step-1])**2
+    if (
+        env.power_setpoints[env.current_step - 1]
+        < env.current_power_usage[env.current_step - 1]
+    ):
+        reward -= (
+            env.current_power_usage[env.current_step - 1]
+            - env.power_setpoints[env.current_step - 1]
+        ) ** 2
 
-    reward += env.current_power_usage[env.current_step-1] #/75
-    
+    reward += env.current_power_usage[env.current_step - 1]  # /75
+
     return reward
+
 
 def profit_maximization(env, total_costs, user_satisfaction_list, *args):
-    ''' This reward function is used for the profit maximization case '''
-    
+    """This reward function is used for the profit maximization case"""
+
     reward = total_costs
-    
+
     for score in user_satisfaction_list:
         # reward -= 100 * (1 - score)
-        reward -= 100 * math.exp(-10*score)
-    
+        reward -= 100 * math.exp(-10 * score)
+
     return reward
 
-def V2G_grid_full_reward(env, total_costs, user_satisfaction_list, *args):
 
+def V2G_grid_full_reward(env, total_costs, user_satisfaction_list, *args):
     reward = total_costs
-    
+
     verbose = False
-    
+
     if verbose:
-        print(f'!!! Costs: {total_costs}')
-    
+        print(f"!!! Costs: {total_costs}")
+
     user_costs = 0
     for ev in env.departing_evs:
         if verbose:
-            print(f'!!! EV: {ev.current_capacity} | {ev.desired_capacity}')
-        user_costs += -(ev.current_capacity - ev.desired_capacity)**2
-    
+            print(f"!!! EV: {ev.current_capacity} | {ev.desired_capacity}")
+        user_costs += -((ev.current_capacity - ev.desired_capacity) ** 2)
+
     if verbose:
-        print(f'!!! User Satisfaction Penalty: {user_costs}')
+        print(f"!!! User Satisfaction Penalty: {user_costs}")
 
     current_step = env.current_step - 1
     v_m = env.node_voltage[:, current_step]
 
-    loss_v = np.minimum(np.zeros_like(v_m), 0.05 - np.abs(1-v_m)).sum()
+    loss_v = np.minimum(np.zeros_like(v_m), 0.05 - np.abs(1 - v_m)).sum()
     return reward + 1000 * loss_v + user_costs
 
 
 def V2G_grid_simple_reward(env, total_costs, user_satisfaction_list, *args):
-
     current_step = env.current_step - 1
     v_m = env.node_voltage[:, current_step]
 
-    loss_v = np.minimum(np.zeros_like(v_m), 0.05 - np.abs(1-v_m)).sum()
+    loss_v = np.minimum(np.zeros_like(v_m), 0.05 - np.abs(1 - v_m)).sum()
 
     return 1000 * loss_v
 
-def V2G_profitmax(env, total_costs, user_satisfaction_list, *args):
 
+def V2G_profitmax(env, total_costs, user_satisfaction_list, *args):
     reward = total_costs
-    
+
     # verbose = False
-    
+
     # if verbose:
     #     print(f'!!! Costs: {total_costs}')
-    
+
     user_costs = 0
     for ev in env.departing_evs:
         # if verbose:
         #     print(f'!!! EV: {ev.current_capacity} | {ev.desired_capacity}')
         if ev.desired_capacity > ev.current_capacity:
             # user_costs += -(ev.current_capacity - ev.desired_capacity)**2
-            user_costs += -100 * (ev.desired_capacity - ev.current_capacity)        
-    
+            user_costs += -100 * (ev.desired_capacity - ev.current_capacity)
+
     # if verbose:
     #     print(f'!!! User Satisfaction Penalty: {user_costs}')
 
@@ -144,197 +199,328 @@ def V2G_profitmax(env, total_costs, user_satisfaction_list, *args):
     # v_m = env.node_voltage[:, current_step]
 
     # loss_v = np.minimum(np.zeros_like(v_m), 0.05 - np.abs(1-v_m)).sum()
-    return (reward + user_costs)
+    return reward + user_costs
 
 
 def V2G_costs_simple(env, total_costs, user_satisfaction_list, *args):
-
     reward = total_costs
     return reward
 
-def V2G_profitmaxV2(env, total_costs, user_satisfaction_list, *args):
 
+def V2G_profitmaxV2(env, total_costs, user_satisfaction_list, *args):
     reward = total_costs
-    
+
     verbose = False
-    
+
     if verbose:
         print("\n=---- Reward Calculation V2G ProfitMax V2 ----=")
-        print(f'!!! Costs: {total_costs}')
-    
+        print(f"!!! Costs: {total_costs}")
+
     user_costs = 0
-    
+
     linear = False
     if linear:
         cost_multiplier = 0.1
     else:
         cost_multiplier = 0.05
-    
+
     for cs in env.charging_stations:
         for ev in cs.evs_connected:
             if ev is not None:
-                min_steps_to_full = (ev.desired_capacity - ev.current_capacity) / \
-                    (ev.max_ac_charge_power/(60/env.timescale))
-                
-                
+                min_steps_to_full = (ev.desired_capacity - ev.current_capacity) / (
+                    ev.max_ac_charge_power / (60 / env.timescale)
+                )
+
                 departing_step = ev.time_of_departure - env.current_step
-                
+
                 cost = 0
-                if min_steps_to_full > departing_step:                    
-                    min_capacity_at_time = ev.desired_capacity - ((departing_step+1) * ev.max_ac_charge_power/(60/env.timescale))
-                    
+                if min_steps_to_full > departing_step:
+                    min_capacity_at_time = ev.desired_capacity - (
+                        (departing_step + 1)
+                        * ev.max_ac_charge_power
+                        / (60 / env.timescale)
+                    )
+
                     if linear:
-                        cost = cost_multiplier*(min_capacity_at_time - ev.current_capacity)
+                        cost = cost_multiplier * (
+                            min_capacity_at_time - ev.current_capacity
+                        )
                     else:
-                        cost = cost_multiplier*(min_capacity_at_time - ev.current_capacity)**2
-                        
-                    user_costs += - cost
-                
+                        cost = (
+                            cost_multiplier
+                            * (min_capacity_at_time - ev.current_capacity) ** 2
+                        )
+
+                    user_costs += -cost
+
                 if verbose:
-                    if min_steps_to_full > departing_step:                    
-                        print(f'-!EV: {min_capacity_at_time} | {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}') 
+                    if min_steps_to_full > departing_step:
+                        print(
+                            f"-!EV: {min_capacity_at_time} | {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}"
+                        )
                     else:
-                        print(f'- EV: {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}')
-                
+                        print(
+                            f"- EV: {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}"
+                        )
+
     for ev in env.departing_evs:
-        if ev.desired_capacity > ev.current_capacity:            
+        if ev.desired_capacity > ev.current_capacity:
             if verbose:
-                print(f'!!! EV: {ev.current_capacity} | {ev.desired_capacity} | costs: {-cost_multiplier*(ev.desired_capacity - ev.current_capacity)**2}')
-                
+                print(
+                    f"!!! EV: {ev.current_capacity} | {ev.desired_capacity} | costs: {-cost_multiplier * (ev.desired_capacity - ev.current_capacity) ** 2}"
+                )
+
             if linear:
-                user_costs += -cost_multiplier * (ev.desired_capacity - ev.current_capacity)
+                user_costs += -cost_multiplier * (
+                    ev.desired_capacity - ev.current_capacity
+                )
             else:
-                user_costs += -cost_multiplier * (ev.desired_capacity - ev.current_capacity)**2
-            
+                user_costs += (
+                    -cost_multiplier * (ev.desired_capacity - ev.current_capacity) ** 2
+                )
+
     if verbose:
-        print(f'!!! User Satisfaction Penalty: {user_costs}')
-        print("=-"*25)
-    
-    return (reward + user_costs)
+        print(f"!!! User Satisfaction Penalty: {user_costs}")
+        print("=-" * 25)
+
+    return reward + user_costs
+
 
 def Grid_V2G_profitmaxV2(env, total_costs, user_satisfaction_list, *args):
-
     reward = total_costs
-    
+
     verbose = False
-    
+
     if verbose:
         print("\n=---- Reward Calculation V2G ProfitMax V2 ----=")
-        print(f'!!! Costs: {total_costs}')
-    
+        print(f"!!! Costs: {total_costs}")
+
     user_costs = 0
-    
+
     linear = False
     if linear:
         cost_multiplier = 0.1
     else:
         cost_multiplier = 0.05
-    
+
     for cs in env.charging_stations:
         for ev in cs.evs_connected:
             if ev is not None:
-                min_steps_to_full = (ev.desired_capacity - ev.current_capacity) / \
-                    (ev.max_ac_charge_power/(60/env.timescale))
-                
-                
+                min_steps_to_full = (ev.desired_capacity - ev.current_capacity) / (
+                    ev.max_ac_charge_power / (60 / env.timescale)
+                )
+
                 departing_step = ev.time_of_departure - env.current_step
-                
+
                 cost = 0
-                if min_steps_to_full > departing_step:                    
-                    min_capacity_at_time = ev.desired_capacity - ((departing_step+1) * ev.max_ac_charge_power/(60/env.timescale))
-                    
+                if min_steps_to_full > departing_step:
+                    min_capacity_at_time = ev.desired_capacity - (
+                        (departing_step + 1)
+                        * ev.max_ac_charge_power
+                        / (60 / env.timescale)
+                    )
+
                     if linear:
-                        cost = cost_multiplier*(min_capacity_at_time - ev.current_capacity)
+                        cost = cost_multiplier * (
+                            min_capacity_at_time - ev.current_capacity
+                        )
                     else:
-                        cost = cost_multiplier*(min_capacity_at_time - ev.current_capacity)**2
-                        
-                    user_costs += - cost
-                
+                        cost = (
+                            cost_multiplier
+                            * (min_capacity_at_time - ev.current_capacity) ** 2
+                        )
+
+                    user_costs += -cost
+
                 if verbose:
-                    if min_steps_to_full > departing_step:                    
-                        print(f'-!EV: {min_capacity_at_time} | {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}') 
+                    if min_steps_to_full > departing_step:
+                        print(
+                            f"-!EV: {min_capacity_at_time} | {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}"
+                        )
                     else:
-                        print(f'- EV: {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}')
-                
+                        print(
+                            f"- EV: {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}"
+                        )
+
     for ev in env.departing_evs:
-        if ev.desired_capacity > ev.current_capacity:            
+        if ev.desired_capacity > ev.current_capacity:
             if verbose:
-                print(f'!!! EV: {ev.current_capacity} | {ev.desired_capacity} | costs: {-cost_multiplier*(ev.desired_capacity - ev.current_capacity)**2}')
-                
+                print(
+                    f"!!! EV: {ev.current_capacity} | {ev.desired_capacity} | costs: {-cost_multiplier * (ev.desired_capacity - ev.current_capacity) ** 2}"
+                )
+
             if linear:
-                user_costs += -cost_multiplier * (ev.desired_capacity - ev.current_capacity)
+                user_costs += -cost_multiplier * (
+                    ev.desired_capacity - ev.current_capacity
+                )
             else:
-                user_costs += -cost_multiplier * (ev.desired_capacity - ev.current_capacity)**2
-    
+                user_costs += (
+                    -cost_multiplier * (ev.desired_capacity - ev.current_capacity) ** 2
+                )
+
     current_step = env.current_step - 1
     v_m = env.node_voltage[:, current_step]
-    loss_v = np.minimum(np.zeros_like(v_m), 0.05 - np.abs(1-v_m)).sum()
-        
+    loss_v = np.minimum(np.zeros_like(v_m), 0.05 - np.abs(1 - v_m)).sum()
+
     if verbose:
-        print(f'!!! User Satisfaction Penalty: {user_costs}')
-        print(f'!!! loss_v: {loss_v}')
-        print(f'!!! m*loss_v: {50_000*loss_v}')
-        print("=-"*25)
-        
+        print(f"!!! User Satisfaction Penalty: {user_costs}")
+        print(f"!!! loss_v: {loss_v}")
+        print(f"!!! m*loss_v: {50_000 * loss_v}")
+        print("=-" * 25)
+
     return reward + user_costs + 50_000 * loss_v
 
-def pst_V2G_profitmaxV2(env, total_costs, user_satisfaction_list, *args):
 
+def pst_V2G_profitmaxV2(env, total_costs, user_satisfaction_list, *args):
     reward = total_costs
-    
+
     verbose = False
-    
+
     if verbose:
         print("\n=---- Reward Calculation V2G ProfitMax V2 ----=")
-        print(f'!!! Costs: {total_costs}')
-    
+        print(f"!!! Costs: {total_costs}")
+
     user_costs = 0
-    
+
     linear = False
     if linear:
         cost_multiplier = 0.1
     else:
         cost_multiplier = 0.05
-    
+
     for cs in env.charging_stations:
         for ev in cs.evs_connected:
             if ev is not None:
-                min_steps_to_full = (ev.desired_capacity - ev.current_capacity) / \
-                    (ev.max_ac_charge_power/(60/env.timescale))
-                
-                
+                min_steps_to_full = (ev.desired_capacity - ev.current_capacity) / (
+                    ev.max_ac_charge_power / (60 / env.timescale)
+                )
+
                 departing_step = ev.time_of_departure - env.current_step
-                
+
                 cost = 0
-                if min_steps_to_full > departing_step:                    
-                    min_capacity_at_time = ev.desired_capacity - ((departing_step+1) * ev.max_ac_charge_power/(60/env.timescale))
-                    
+                if min_steps_to_full > departing_step:
+                    min_capacity_at_time = ev.desired_capacity - (
+                        (departing_step + 1)
+                        * ev.max_ac_charge_power
+                        / (60 / env.timescale)
+                    )
+
                     if linear:
-                        cost = cost_multiplier*(min_capacity_at_time - ev.current_capacity)
+                        cost = cost_multiplier * (
+                            min_capacity_at_time - ev.current_capacity
+                        )
                     else:
-                        cost = cost_multiplier*(min_capacity_at_time - ev.current_capacity)**2
-                        
-                    user_costs += - cost
-                
+                        cost = (
+                            cost_multiplier
+                            * (min_capacity_at_time - ev.current_capacity) ** 2
+                        )
+
+                    user_costs += -cost
+
                 if verbose:
-                    if min_steps_to_full > departing_step:                    
-                        print(f'-!EV: {min_capacity_at_time} | {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}') 
+                    if min_steps_to_full > departing_step:
+                        print(
+                            f"-!EV: {min_capacity_at_time} | {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}"
+                        )
                     else:
-                        print(f'- EV: {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}')
-                
+                        print(
+                            f"- EV: {ev.current_capacity} | {ev.desired_capacity} | {min_steps_to_full:.3f} | {departing_step} | cost {(cost):.3f}"
+                        )
+
     for ev in env.departing_evs:
-        if ev.desired_capacity > ev.current_capacity:            
+        if ev.desired_capacity > ev.current_capacity:
             if verbose:
-                print(f'!!! EV: {ev.current_capacity} | {ev.desired_capacity} | costs: {-cost_multiplier*(ev.desired_capacity - ev.current_capacity)**2}')
-                
+                print(
+                    f"!!! EV: {ev.current_capacity} | {ev.desired_capacity} | costs: {-cost_multiplier * (ev.desired_capacity - ev.current_capacity) ** 2}"
+                )
+
             if linear:
-                user_costs += -cost_multiplier * (ev.desired_capacity - ev.current_capacity)
+                user_costs += -cost_multiplier * (
+                    ev.desired_capacity - ev.current_capacity
+                )
             else:
-                user_costs += -cost_multiplier * (ev.desired_capacity - ev.current_capacity)**2
-    
+                user_costs += (
+                    -cost_multiplier * (ev.desired_capacity - ev.current_capacity) ** 2
+                )
+
     pst_violation = 0
-    if env.power_setpoints[env.current_step-1] < env.current_power_usage[env.current_step-1]:
-        pst_violation += (env.power_setpoints[env.current_step-1] - env.current_power_usage[env.current_step-1])  
-               
-        
+    if (
+        env.power_setpoints[env.current_step - 1]
+        < env.current_power_usage[env.current_step - 1]
+    ):
+        pst_violation += (
+            env.power_setpoints[env.current_step - 1]
+            - env.current_power_usage[env.current_step - 1]
+        )
+
     return reward + user_costs + 1000 * pst_violation
+
+
+def profitmax_dense_penalty(
+    env,
+    total_costs,
+    user_satisfaction_list,
+    invalid_action_punishment=0.0,
+    lambda_penalty=10.0,
+    unrecoverable_penalty=-1000.0,
+    verbose=False,
+    *args,
+):
+    """
+    Dense feasibility penalty reward function for profit maximization.
+
+    Returns a large negative reward if env.unrecoverable_state is True (set by
+    EV2Gym.step() when any EV has energy_gap > 0). Otherwise returns reward
+    based on total_costs minus soft violation penalty.
+
+    Args:
+        env: The EV2Gym environment
+        total_costs: The total profit/costs from charging operations
+        lambda_penalty: Weight for soft violation penalty (default: 10.0)
+        unrecoverable_penalty: Large negative reward for unrecoverable state (default: -1000.0)
+        verbose: Whether to print debug information
+
+    Returns:
+        float: The calculated reward
+    """
+    if verbose:
+        print("\n=---- Dense Feasibility Penalty Reward ----=")
+        print(f"Total costs: {total_costs}")
+
+    if getattr(env, "unrecoverable_state", False):
+        if verbose:
+            print("  UNRECOVERABLE STATE DETECTED!")
+            print(f"  Returning penalty: {unrecoverable_penalty}")
+            print("=" + "-" * 49)
+        return unrecoverable_penalty
+
+    total_soft_violation = 0.0
+    for cs in env.charging_stations:
+        for ev in cs.evs_connected:
+            if ev is None:
+                continue
+
+            energy_gap = ev.energy_gap
+            if energy_gap is None:
+                continue
+
+            delta = ev.energy_per_step
+            soft_violation = max(0.0, energy_gap + delta)
+            total_soft_violation += soft_violation
+
+            if verbose:
+                print(
+                    f"  EV at CS{cs.id}: energy_gap={energy_gap:.2f}, "
+                    f"delta={delta:.2f}, soft_violation={soft_violation:.4f}"
+                )
+
+    penalty = lambda_penalty * total_soft_violation
+    final_reward = total_costs - penalty
+
+    if verbose:
+        print(f"  total_soft_violation={total_soft_violation:.4f}")
+        print(f"  penalty={penalty:.4f}")
+        print(f"  final_reward={final_reward:.4f}")
+        print("=" + "-" * 49)
+
+    return final_reward

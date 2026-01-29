@@ -16,16 +16,18 @@ ALGORITHM="sac"
 DEVICE="cpu"
 
 # Number of training steps
-TRAIN_STEPS=20000
+TRAIN_STEPS=99999
+
+CONFIG_FILE="ev2gym/example_config_files/simplePST.yaml"
 
 # Reward function
-# REWARD_FUNCTION=""
+REWARD_FUNCTION="ev2gym.rl_agent.reward:profitmax_dense_penalty"
 
 # State function
-# STATE_FUNCTION=""
+STATE_FUNCTION="ev2gym.rl_agent.state:V2G_profit_max_no_forecast"
 
 # Disable wandb logging (set to "true" to disable, "false" to enable)
-NO_WANDB="true"
+# NO_WANDB="true"
 
 # Verbosity level (0=quiet, 1=info, 2=debug)
 # VERBOSE=1
